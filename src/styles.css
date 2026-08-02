@@ -1,0 +1,1018 @@
+@import "tailwindcss";
+@import "react-day-picker/style.css";
+
+:root {
+  color-scheme: dark;
+  font-family:
+    Aptos, "Avenir Next", "Trebuchet MS", Inter, ui-sans-serif, system-ui,
+    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #111214;
+  color: #f5f5f4;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  /* Outside-the-card drag handles may round past a mobile viewport by a subpixel. */
+  overflow-x: clip;
+  background: #111214;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 50% -20%, rgba(255, 255, 255, 0.035), transparent 35%),
+    #111214;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button svg {
+  width: 14px;
+  height: 14px;
+}
+
+::selection {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding: 34px 20px 22px;
+  overflow-x: hidden;
+}
+
+.workspace {
+  width: min(840px, 100%);
+  margin: 0 auto;
+}
+
+.workspace-header {
+  min-height: 29px;
+  margin-bottom: 12px;
+}
+
+.workspace h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.new-task-button {
+  height: 29px;
+  padding: 0 9px;
+}
+
+.new-task-button svg {
+  width: 12px;
+  height: 12px;
+}
+
+.shortcut-help {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.36);
+  background: transparent;
+  transition:
+    color 140ms ease,
+    background 140ms ease;
+}
+
+.shortcut-help:hover {
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.shortcut-tooltip {
+  z-index: 80;
+  display: grid;
+  gap: 5px;
+  min-width: 170px;
+  padding: 11px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.52);
+  background: #242528;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.34);
+  font-size: 12px;
+}
+
+.shortcut-tooltip strong {
+  margin-bottom: 3px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+}
+
+.tab-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 36px;
+  margin-bottom: 18px;
+}
+
+.tab-row [role="tablist"] {
+  display: flex;
+  gap: 23px;
+}
+
+.tab-row [role="tab"] {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 33px;
+  padding: 0;
+  border: 0;
+  color: rgba(255, 255, 255, 0.38);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  transition: color 140ms ease;
+}
+
+.tab-row [role="tab"] > svg {
+  display: none;
+}
+
+.tab-row [role="tab"] > span {
+  color: rgba(255, 255, 255, 0.24);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tab-row [role="tab"][data-active] {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.tab-row [role="tab"][data-active]::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.85);
+  content: "";
+}
+
+/* Headers and task rows share tracks so labels stay aligned with controls. */
+.column-labels,
+.task-main {
+  display: grid;
+  grid-template-columns: 12px 40px minmax(165px, 1fr) 128px 94px 92px 48px;
+  column-gap: 5px;
+  align-items: center;
+}
+
+.column-labels {
+  min-height: 28px;
+  padding: 0 11px;
+  color: rgba(255, 255, 255, 0.28);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
+.column-labels button {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 3px;
+  justify-self: start;
+  border: 0;
+  padding: 3px 0;
+  color: inherit;
+  background: transparent;
+  font-size: inherit;
+  font-weight: inherit;
+  text-transform: inherit;
+  transition: color 140ms ease;
+}
+
+.column-labels button:hover,
+.column-labels button:focus-visible,
+.column-labels button.is-sorted {
+  color: rgba(255, 255, 255, 0.72);
+  outline: none;
+}
+
+.sort-indicator {
+  display: inline-grid;
+  width: 10px;
+  height: 10px;
+  place-items: center;
+}
+
+.sort-indicator svg {
+  width: 9px;
+  height: 9px;
+}
+
+.task-list {
+  outline: none;
+}
+
+.task-card {
+  position: relative;
+  overflow: visible;
+  margin-bottom: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.025);
+  border-radius: 9px;
+  background: #1b1c1e;
+  cursor: grab;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.012) inset;
+  outline: none;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.task-card:hover {
+  border-color: rgba(255, 255, 255, 0.055);
+  background: #1d1e20;
+}
+
+.task-card.is-selected {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.025),
+    0 8px 26px rgba(0, 0, 0, 0.12);
+}
+
+.task-card.is-dragging {
+  /* Motion writes opacity inline, so the source placeholder must win explicitly. */
+  opacity: 0 !important;
+}
+
+.task-main {
+  min-height: 53px;
+  padding: 0 9px 0 7px;
+  font-weight: 500;
+}
+
+/*
+ * The handle sits outside the shared grid. The spacer preserves header
+ * alignment while giving the title the room formerly occupied by the handle.
+ */
+.drag-handle {
+  position: absolute;
+  z-index: 2;
+  top: 10px;
+  left: -22px;
+  display: grid;
+  width: 20px;
+  height: 33px;
+  place-items: center;
+  border: 0;
+  border-radius: 5px;
+  color: rgba(255, 255, 255, 0);
+  touch-action: none;
+  background: transparent;
+  transition:
+    color 140ms ease,
+    background 140ms ease;
+}
+
+.drag-spacer {
+  width: 12px;
+}
+
+.task-card:hover .drag-handle,
+.task-card:focus-within .drag-handle {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.drag-handle:hover {
+  color: rgba(255, 255, 255, 0.55) !important;
+  background: rgba(255, 255, 255, 0.045);
+  cursor: grabbing;
+}
+
+/*
+ * DragOverlay is detached from document flow so it follows the pointer while
+ * the transparent source row continues to reserve a sortable destination.
+ */
+.task-drag-preview {
+  /* Add six pixels on either side of the source row without moving its center. */
+  width: min(852px, calc(100vw - 28px));
+  margin-left: -6px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9px;
+  background: #222326;
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  cursor: grabbing;
+  pointer-events: none;
+  transform: rotate(0.25deg) scale(1.006);
+}
+
+.task-drag-preview .priority-trigger,
+.task-drag-preview .status-trigger {
+  display: inline-flex;
+  align-items: center;
+}
+
+body.is-dragging-task,
+body.is-dragging-task * {
+  cursor: grabbing !important;
+}
+
+.priority-trigger {
+  width: 28px;
+  min-width: 28px;
+  height: 24px;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.priority-trigger svg {
+  display: none;
+}
+
+.priority-0 {
+  color: #fff;
+  background: #d84d42;
+  box-shadow: 0 0 0 1px rgba(255, 151, 142, 0.2) inset;
+}
+
+.priority-1 {
+  color: #fff;
+  background: #bd7918;
+  box-shadow: 0 0 0 1px rgba(255, 206, 113, 0.18) inset;
+}
+
+.priority-2 {
+  color: #fff;
+  background: #596170;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+}
+
+.title-cell {
+  min-width: 0;
+}
+
+.status-cell {
+  padding-left: 6px;
+}
+
+.title-button,
+.title-input {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  height: 35px;
+  padding: 0 4px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: rgba(255, 255, 255, 0.86);
+  background: transparent;
+  font-size: 15px;
+  font-weight: 560;
+  line-height: 33px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  outline: none;
+}
+
+.title-button:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.title-input {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.title-button.is-empty {
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 500;
+}
+
+.status-trigger {
+  width: max-content;
+  max-width: 100%;
+  height: 28px;
+  gap: 0;
+  justify-content: flex-start;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 0 8px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* Status is fully readable as a compact pill, so its generic select chevron is redundant. */
+.status-trigger svg {
+  display: none;
+}
+
+/* Base UI clamps Select.Value by default; status labels must remain complete. */
+.status-trigger > [data-slot="select-value"] {
+  display: inline;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+  -webkit-line-clamp: unset;
+}
+
+.status-in-progress {
+  color: #67c6d8;
+  border-color: rgba(73, 170, 190, 0.26);
+  background: rgba(54, 150, 170, 0.055);
+}
+
+.status-on-hold {
+  color: #e3bc63;
+  border-color: rgba(214, 164, 57, 0.22);
+  background: rgba(214, 164, 57, 0.045);
+}
+
+.status-done {
+  color: #7ecb99;
+  border-color: rgba(70, 170, 110, 0.22);
+  background: rgba(70, 170, 110, 0.045);
+}
+
+.status-kill {
+  color: #ec8585;
+  border-color: rgba(210, 80, 80, 0.24);
+  background: rgba(210, 80, 80, 0.05);
+}
+
+.status-not-started {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.property-trigger {
+  display: block;
+  width: 100%;
+  height: 30px;
+  padding: 0 5px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 5px;
+  color: rgba(255, 255, 255, 0.42);
+  background: transparent;
+  font-size: 14px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition:
+    color 140ms ease,
+    background 140ms ease;
+}
+
+.estimate-trigger {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.property-trigger:hover {
+  color: rgba(255, 255, 255, 0.76);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.due-trigger {
+  position: relative;
+}
+
+/* Desktop swaps relative and exact due labels without changing column width. */
+.due-exact {
+  display: none;
+}
+
+.due-trigger:hover .due-relative,
+.due-trigger:focus .due-relative {
+  display: none;
+}
+
+.due-trigger:hover .due-exact,
+.due-trigger:focus .due-exact {
+  display: inline;
+}
+
+.due-trigger .is-overdue {
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: #ff8075;
+  background: rgba(229, 63, 52, 0.08);
+}
+
+.row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1px;
+  min-width: 0;
+}
+
+.row-action {
+  width: 23px !important;
+  height: 27px !important;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.row-action:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.delete-action:hover {
+  color: #ff8175;
+}
+
+.description-panel {
+  padding: 0 13px 12px 65px;
+}
+
+.description-panel textarea {
+  display: block;
+  width: 100%;
+  min-height: 96px;
+  overflow-y: hidden;
+  resize: none;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 7px;
+  padding: 10px 11px;
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(0, 0, 0, 0.14);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+  outline: none;
+  transition: border-color 140ms ease;
+}
+
+.description-panel textarea:focus {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.description-panel textarea::placeholder {
+  color: rgba(255, 255, 255, 0.24);
+}
+
+.description-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.description-actions > span {
+  margin-right: auto;
+  color: rgba(255, 255, 255, 0.22);
+  font-size: 11px;
+}
+
+.description-actions svg {
+  width: 12px;
+  height: 12px;
+}
+
+.tab-actions .new-task-button,
+.description-actions [data-slot="button"],
+.clear-property-button {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.clear-property-button {
+  height: 26px;
+  padding: 0 7px;
+}
+
+.estimate-popover {
+  /* Stable dimensions prevent the unit label and amount from resizing the menu. */
+  width: 248px;
+  height: 104px;
+}
+
+.estimate-controls {
+  display: flex;
+  height: 34px;
+  align-items: center;
+  gap: 4px;
+}
+
+.stepper-buttons {
+  display: grid;
+  width: 24px;
+  height: 32px;
+  flex: 0 0 24px;
+}
+
+.stepper-buttons button {
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.4);
+  touch-action: none;
+  background: transparent;
+}
+
+.stepper-buttons button:hover {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.stepper-buttons svg {
+  width: 10px;
+  height: 10px;
+}
+
+.estimate-amount {
+  width: 62px;
+  flex: 0 0 62px;
+}
+
+.estimate-amount input {
+  width: 100%;
+  height: 32px;
+  border: 0;
+  border-radius: 5px;
+  padding: 0 7px;
+  color: rgba(255, 255, 255, 0.78);
+  background: transparent;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  transition:
+    color 140ms ease,
+    background 140ms ease;
+}
+
+.estimate-amount input:hover,
+.estimate-amount input:focus {
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.estimate-unit-trigger {
+  width: 92px;
+  height: 32px;
+  flex: 0 0 92px;
+  border: 0;
+  padding: 0 7px;
+  font-size: 12px;
+}
+
+.property-popover-foot {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.estimate-range {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 11px;
+}
+
+.status-options {
+  padding: 5px;
+}
+
+/* Status menu items reuse the same semantic color pills as their row triggers. */
+.status-option {
+  width: max-content;
+  height: 28px;
+  margin: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 0 10px 0 28px;
+  cursor: pointer;
+}
+
+.status-option[data-highlighted] {
+  filter: brightness(1.35);
+}
+
+.calendar-popover {
+  width: 292px;
+  padding: 12px;
+}
+
+.rdp-root {
+  --rdp-accent-color: #f5f5f4;
+  --rdp-accent-background-color: rgba(255, 255, 255, 0.1);
+  --rdp-day_button-width: 34px;
+  --rdp-day_button-height: 32px;
+  --rdp-day-width: 36px;
+  --rdp-day-height: 34px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+}
+
+.rdp-month_caption {
+  height: 35px;
+  font-size: 13px;
+}
+
+.rdp-weekday {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 11px;
+}
+
+.rdp-day_button {
+  border-radius: 7px;
+}
+
+.rdp-day_button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.rdp-selected .rdp-day_button {
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.16);
+  font-weight: 600;
+  transform: none;
+}
+
+.calendar-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 7px;
+  padding: 8px 2px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.28);
+  font-size: 11px;
+}
+
+.calendar-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.empty-state {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  border: 1px dashed rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.24);
+}
+
+.empty-state > svg {
+  width: 20px;
+  height: 20px;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 13px;
+}
+
+footer {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 31px;
+  color: rgba(255, 255, 255, 0.19);
+  font-size: 11px;
+}
+
+.dialog-overlay {
+  position: fixed;
+  z-index: 90;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(3px);
+}
+
+.dialog-content {
+  position: fixed;
+  z-index: 91;
+  top: 50%;
+  left: 50%;
+  width: min(390px, calc(100vw - 32px));
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 13px;
+  padding: 20px;
+  color: #f5f5f4;
+  background: #202124;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48);
+}
+
+.dialog-content h2 {
+  margin: 0 0 8px;
+  font-size: 17px;
+}
+
+.dialog-content p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+  margin-top: 19px;
+}
+
+@media (max-width: 680px) {
+  .app-shell {
+    padding: 22px 14px 18px;
+  }
+
+  .workspace-header {
+    margin-bottom: 10px;
+  }
+
+  .workspace h1 {
+    font-size: 22px;
+  }
+
+  .column-labels {
+    display: none;
+  }
+
+  .tab-row {
+    margin-bottom: 12px;
+  }
+
+  .tab-row [role="tablist"] {
+    gap: 16px;
+  }
+
+  .tab-row [role="tab"] > svg {
+    display: block;
+    width: 13px;
+    height: 13px;
+  }
+
+  /* Stacked mobile rows keep the handle outside and align metadata below title. */
+  .task-main {
+    grid-template-columns: 39px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "pri title actions"
+      ". status status"
+      ". estimate due";
+    gap: 4px 7px;
+    padding: 9px 9px 9px 20px;
+  }
+
+  .drag-handle {
+    top: 10px;
+    left: -9px;
+    height: 33px;
+    color: rgba(255, 255, 255, 0.18);
+  }
+
+  .drag-spacer {
+    display: none;
+  }
+
+  .task-drag-preview {
+    width: calc(100vw - 16px);
+  }
+
+  .priority-cell {
+    grid-area: pri;
+  }
+
+  .title-cell {
+    grid-area: title;
+  }
+
+  .status-cell {
+    grid-area: status;
+    padding-left: 0;
+  }
+
+  .estimate-cell {
+    grid-area: estimate;
+  }
+
+  .due-cell {
+    grid-area: due;
+  }
+
+  .row-actions {
+    grid-area: actions;
+  }
+
+  .status-trigger {
+    width: max-content;
+    max-width: 140px;
+  }
+
+  .property-trigger {
+    width: auto;
+    padding-right: 7px;
+  }
+
+  .estimate-trigger::before {
+    color: rgba(255, 255, 255, 0.2);
+    content: "est · ";
+  }
+
+  .due-trigger::before {
+    color: rgba(255, 255, 255, 0.2);
+    content: "due · ";
+  }
+
+  .due-exact {
+    display: inline;
+  }
+
+  .due-relative {
+    display: none;
+  }
+
+  .description-panel {
+    padding: 0 11px 11px 64px;
+  }
+
+  .description-actions > span {
+    display: none;
+  }
+
+  footer {
+    margin-top: 24px;
+  }
+}
+
+@media (max-width: 430px) {
+  .tab-actions .shortcut-help {
+    display: none;
+  }
+
+  .new-task-button {
+    width: 32px;
+    /* Override the shared button's horizontal utility padding in icon-only mode. */
+    padding: 0 !important;
+    font-size: 0;
+  }
+
+  .new-task-button svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .description-panel {
+    padding-left: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Honor the OS setting across Motion, DnD settling, and CSS interactions. */
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
