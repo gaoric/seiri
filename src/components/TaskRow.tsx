@@ -10,7 +10,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import {
   type KeyboardEvent,
   type MouseEvent,
@@ -52,8 +52,14 @@ type TaskRowProps = {
   tab: TaskTab;
   selected: boolean;
   expanded: boolean;
+  statusOverride?: TaskStatus;
   editTitleRequested: boolean;
+  newTaskDraft: boolean;
   onEditTitleHandled: () => void;
+  onNewTaskDraftFinished: () => void;
+  onNewTaskDraftCanceled: () => void;
+  onKillRequested: () => void;
+  onDoneRequested: () => void;
 };
 
 const STATUSES = Object.keys(STATUS_LABELS) as TaskStatus[];
@@ -63,8 +69,14 @@ export function TaskRow({
   tab,
   selected,
   expanded,
+  statusOverride,
   editTitleRequested,
+  newTaskDraft,
   onEditTitleHandled,
+  onNewTaskDraftFinished,
+  onNewTaskDraftCanceled,
+  onKillRequested,
+  onDoneRequested,
 }: TaskRowProps) {
   const updateTask = useTaskStore((state) => state.updateTask);
   const restoreTask = useTaskStore((state) => state.restoreTask);
@@ -76,6 +88,7 @@ export function TaskRow({
   const [descriptionDraft, setDescriptionDraft] = useState(task.description);
   const titleRef = useRef<HTMLInputElement>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const taskRef = useRef<HTMLElement>(null);
   const {
     attributes,
     listeners,
@@ -85,6 +98,7 @@ export function TaskRow({
     isDragging,
   } = useSortable({ id: task.id });
   const displayTitle = task.title || "—";
+  const displayStatus = statusOverride ?? task.status;
 
   useEffect(() => setTitleDraft(task.title), [task.title]);
   useEffect(() => {
@@ -113,19 +127,65 @@ export function TaskRow({
       `${descriptionRef.current.scrollHeight + borderHeight}px`;
   }, [descriptionDraft, expanded]);
 
+  useEffect(() => {
+    if (!expanded) return;
+
+    function saveWhenClickingOutside(event: globalThis.PointerEvent) {
+      if (
+        !(event.target instanceof Node) ||
+        taskRef.current?.contains(event.target)
+      ) {
+        return;
+      }
+      updateTask(task.id, { description: descriptionDraft.trim() });
+      setExpandedId(null);
+    }
+
+    document.addEventListener("pointerdown", saveWhenClickingOutside);
+    return () =>
+      document.removeEventListener("pointerdown", saveWhenClickingOutside);
+  }, [
+    descriptionDraft,
+    expanded,
+    setExpandedId,
+    task.id,
+    updateTask,
+  ]);
+
   function saveTitle() {
     const title = titleDraft.trim();
     updateTask(task.id, { title });
+    if (newTaskDraft) onNewTaskDraftFinished();
     setEditingTitle(false);
   }
 
+  function saveTitleOnBlur() {
+    if (newTaskDraft && !titleDraft.trim()) {
+      onNewTaskDraftCanceled();
+      return;
+    }
+    saveTitle();
+  }
+
   function cancelTitle() {
+    if (newTaskDraft) {
+      onNewTaskDraftCanceled();
+      return;
+    }
     setTitleDraft(task.title);
     setEditingTitle(false);
   }
 
   function changeStatus(status: TaskStatus | null) {
     if (!status) return;
+    if (status === "done" && !isArchivedStatus(task.status)) {
+      onDoneRequested();
+      return;
+    }
+    if (status === "kill" && !isArchivedStatus(task.status)) {
+      onKillRequested();
+      return;
+    }
     const previousStatus = task.status;
     updateTask(task.id, { status });
     if (!isArchivedStatus(previousStatus) && isArchivedStatus(status)) {
@@ -184,7 +244,10 @@ export function TaskRow({
 
   return (
     <motion.article
-      ref={setNodeRef}
+      ref={(node) => {
+        taskRef.current = node;
+        setNodeRef(node);
+      }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -199,7 +262,7 @@ export function TaskRow({
         isDragging && "is-dragging",
       )}
       tabIndex={0}
-      aria-label={`${displayTitle}, ${STATUS_LABELS[task.status]}`}
+      aria-label={`${displayTitle}, ${STATUS_LABELS[displayStatus]}`}
       onFocus={() => setSelectedId(task.id)}
       onPointerDown={handleRowPointerDown}
       onTouchStart={handleRowTouchStart}
@@ -252,7 +315,7 @@ export function TaskRow({
               size={Math.max(1, titleDraft.length)}
               value={titleDraft}
               onChange={(event) => setTitleDraft(event.target.value)}
-              onBlur={saveTitle}
+              onBlur={saveTitleOnBlur}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
@@ -276,12 +339,12 @@ export function TaskRow({
         </div>
 
         <div className="status-cell" data-label="Status">
-          <Select value={task.status} onValueChange={changeStatus}>
+          <Select value={displayStatus} onValueChange={changeStatus}>
             <SelectTrigger
               aria-label="Status"
-              className={cn("status-trigger", `status-${task.status}`)}
+              className={cn("status-trigger", `status-${displayStatus}`)}
             >
-              <SelectValue>{STATUS_LABELS[task.status]}</SelectValue>
+              <SelectValue>{STATUS_LABELS[displayStatus]}</SelectValue>
             </SelectTrigger>
             <SelectContent className="status-options">
               {STATUSES.map((status) => (
@@ -358,11 +421,20 @@ export function TaskRow({
         </div>
       </div>
 
-      {expanded && (
-        <div className="description-panel" data-no-drag>
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            className="description-panel-clip"
+            data-no-drag
+            initial={{ height: 0 }}
+            animate={{ height: "auto" }}
+            exit={{ height: 0 }}
+            transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="description-panel">
           <textarea
             ref={descriptionRef}
-            autoFocus
+            autoFocus={!newTaskDraft}
             aria-label="Task description"
             placeholder="Add a quiet note…"
             value={descriptionDraft}
@@ -400,9 +472,11 @@ export function TaskRow({
               )}
               Save
             </Button>
-          </div>
-        </div>
-      )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.article>
   );
 }

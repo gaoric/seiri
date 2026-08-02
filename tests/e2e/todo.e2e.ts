@@ -12,8 +12,68 @@ test("creates, edits, and persists a task", async ({ page }) => {
   await title.fill("Ship the Bun build");
   await title.press("Enter");
   await expect(page.getByText("Ship the Bun build")).toBeVisible();
+  await expect(page.getByRole("article").first()).toContainText(
+    "Ship the Bun build",
+  );
   await page.reload();
   await expect(page.getByText("Ship the Bun build")).toBeVisible();
+});
+
+test("materializes and expands a new task through the light orb sequence", async ({
+  page,
+}) => {
+  const button = page.getByRole("button", { name: "New task" });
+  const previousFirstRow = page.getByRole("article").first();
+  const previousY = (await previousFirstRow.boundingBox())?.y;
+
+  await button.click();
+
+  const launcher = page.locator(".new-task-launcher");
+  const materializingRow = page.locator(
+    ".task-row-shell.is-materializing",
+  );
+  await expect(button).toBeDisabled();
+  await expect(launcher).toHaveClass(/is-creating/);
+  await expect(page.locator(".new-task-light-orb")).toHaveCount(1);
+  await expect(page.locator(".new-task-button-loader")).toHaveCount(1);
+  await expect(materializingRow).toHaveCSS("animation-name", "none");
+  const hologram = page.locator(".new-task-hologram");
+  await expect(hologram).toHaveCount(1);
+  const hologramBox = await hologram.boundingBox();
+  const formingCardBox = await materializingRow
+    .locator(".task-card")
+    .boundingBox();
+  expect(hologramBox).not.toBeNull();
+  expect(formingCardBox).not.toBeNull();
+  expect(
+    Math.abs(
+      hologramBox!.y + hologramBox!.height -
+        (formingCardBox!.y + formingCardBox!.height),
+    ),
+  ).toBeLessThan(1);
+
+  await page.waitForTimeout(220);
+  const buttonOpacity = await button.evaluate((element) =>
+    Number.parseFloat(getComputedStyle(element).opacity),
+  );
+  const loaderOpacity = await page.locator(".new-task-button-loader")
+    .evaluate((element) => Number.parseFloat(getComputedStyle(element).opacity));
+  expect(buttonOpacity).toBeLessThan(0.1);
+  expect(loaderOpacity).toBeLessThan(0.1);
+  await page.waitForTimeout(200);
+  const shiftedY = (await page.getByRole("article").nth(1).boundingBox())?.y;
+  expect(previousY).toBeDefined();
+  expect(shiftedY).toBeDefined();
+  expect(shiftedY!).toBeGreaterThan(previousY! + 35);
+
+  await expect(button).toBeEnabled({ timeout: 2_500 });
+  await expect(launcher).not.toHaveClass(/is-creating/);
+  await expect(page.locator(".new-task-light-orb")).toHaveCount(0);
+  await expect(page.locator(".new-task-button-loader")).toHaveCount(0);
+  await expect(page.locator(".new-task-hologram")).toHaveCount(0);
+  await expect(
+    page.getByRole("article").first().locator(".description-panel"),
+  ).toBeVisible();
 });
 
 test("opens the description and archive view", async ({ page }) => {
@@ -51,6 +111,7 @@ test("clamps estimates and supports press-and-hold stepping", async ({
 
   await amount.fill("1");
   await amount.press("Enter");
+  await expect(firstRow.locator(".estimate-trigger")).toContainText("1 day");
   const increase = page.getByLabel("Increase estimate");
   await increase.dispatchEvent("pointerdown");
   await page.waitForTimeout(470);
@@ -63,6 +124,96 @@ test("reorders tasks with the keyboard shortcut", async ({ page }) => {
   await rows.nth(0).focus();
   await rows.nth(0).press("Shift+ArrowDown");
   await expect(rows.nth(1)).toContainText("Shape the first version");
+});
+
+test("powers off a killed task through the VHS collapse", async ({
+  page,
+}) => {
+  const rows = page.getByRole("article");
+  const firstRow = rows.first();
+  const cardBox = await firstRow.boundingBox();
+  await firstRow.focus();
+  await firstRow.press("Shift+Delete");
+  await expect(firstRow.locator(".status-trigger")).toContainText("Kill");
+
+  const killingRow = page.locator(".task-life-cycle.is-killing");
+  const hologram = killingRow.locator(".task-transition-hologram");
+  const flash = killingRow.locator(".task-vhs-flash");
+  await expect(killingRow).toHaveCount(1);
+  await expect(hologram).toHaveCount(1);
+  await expect(flash).toHaveCount(1);
+  await expect(rows).toHaveCount(3);
+
+  expect(cardBox).not.toBeNull();
+  await expect.poll(
+    async () => {
+      const box = await flash.boundingBox();
+      return Boolean(
+        box &&
+          box.width > cardBox!.width * 0.98 &&
+          box.height < cardBox!.height * 0.75,
+      );
+    },
+    { intervals: [16], timeout: 2_000 },
+  ).toBe(true);
+  await expect(rows).toHaveCount(3);
+  await expect(hologram).toHaveCSS("opacity", "0");
+
+  await expect.poll(
+    async () => {
+      const box = await flash.boundingBox();
+      return Boolean(box && box.width < cardBox!.width * 0.9);
+    },
+    { intervals: [16], timeout: 1_000 },
+  ).toBe(true);
+
+  await expect(rows).toHaveCount(2);
+  await expect(page.locator(".task-complete-light-orb")).toHaveCount(0);
+  await page.getByRole("tab", { name: /Archive/ }).click();
+  await expect(page.getByText("Shape the first version")).toBeVisible();
+});
+
+test("absorbs a completed task into Archive as a circular light orb", async ({
+  page,
+}) => {
+  const rows = page.getByRole("article");
+  const firstRow = rows.first();
+  await firstRow.getByRole("combobox", { name: "Status" }).click();
+  await page.getByRole("option", { name: "Done", exact: true }).click();
+  await expect(firstRow.locator(".status-trigger")).toContainText("Done");
+
+  const completingRow = page.locator(".task-life-cycle.is-completing");
+  await expect(completingRow).toHaveCount(1);
+  await expect(
+    completingRow.locator(".task-transition-hologram"),
+  ).toHaveCount(1);
+  await expect(completingRow.locator(".task-vhs-flash")).toHaveCount(1);
+  await expect(rows).toHaveCount(3);
+
+  const orb = page.locator(".task-complete-light-orb");
+  await expect(orb).toHaveCount(1, { timeout: 2_000 });
+  await expect(
+    completingRow.locator(".task-transition-hologram"),
+  ).toHaveCount(0);
+  await expect(orb).toHaveCSS("border-radius", "50%");
+  await expect(orb).toHaveCSS("clip-path", "none");
+  const orbStart = await orb.boundingBox();
+  await page.waitForTimeout(360);
+  const orbInFlight = await orb.boundingBox();
+  expect(orbStart).not.toBeNull();
+  expect(orbInFlight).not.toBeNull();
+  expect(
+    Math.hypot(
+      orbInFlight!.x - orbStart!.x,
+      orbInFlight!.y - orbStart!.y,
+    ),
+  ).toBeGreaterThan(8);
+
+  await expect(orb).toHaveCount(0, { timeout: 1_600 });
+  await expect(page.locator(".archive-twinkle")).toHaveCount(1);
+  await expect(rows).toHaveCount(2);
+  await page.getByRole("tab", { name: /Archive/ }).click();
+  await expect(page.getByText("Shape the first version")).toBeVisible();
 });
 
 test("uses Base UI selects, tooltip, and archive dialog", async ({ page }) => {
@@ -90,6 +241,15 @@ test("uses Base UI selects, tooltip, and archive dialog", async ({ page }) => {
   const statusOption = page.getByRole("option", { name: "In progress" });
   await expect(statusOption).toHaveClass(/status-in-progress/);
   await expect(statusOption).toHaveCSS("border-radius", "999px");
+  const statusOptionBox = await statusOption.boundingBox();
+  const statusIndicatorBox = await statusOption
+    .locator('[data-slot="select-item-indicator"]')
+    .boundingBox();
+  expect(statusOptionBox).not.toBeNull();
+  expect(statusIndicatorBox).not.toBeNull();
+  expect(statusIndicatorBox!.x + statusIndicatorBox!.width).toBeLessThanOrEqual(
+    statusOptionBox!.x,
+  );
   await page.keyboard.press("Escape");
 
   const shortcutHelp = page.getByRole("button", {
@@ -121,7 +281,7 @@ test("uses Base UI selects, tooltip, and archive dialog", async ({ page }) => {
   ).toBeHidden();
 });
 
-test("keeps blank tasks and sizes title and estimate controls to content", async ({
+test("cancels abandoned drafts and keeps confirmed blank tasks", async ({
   page,
 }) => {
   await expect(page.getByText("seiri", { exact: false })).toHaveCount(0);
@@ -142,10 +302,62 @@ test("keeps blank tasks and sizes title and estimate controls to content", async
     }));
   expect(statusFits.fits).toBe(true);
   expect(statusFits.text).toContain("Not started");
+  const firstRow = page.getByRole("article").first();
+  await expect(firstRow.locator(".priority-trigger")).toHaveCSS(
+    "font-size",
+    "12px",
+  );
+  await expect(firstRow.locator(".priority-trigger")).toHaveCSS(
+    "font-weight",
+    "480",
+  );
+  await expect(firstRow.locator(".title-button")).toHaveCSS(
+    "font-size",
+    "14px",
+  );
+  await expect(firstRow.locator(".title-button")).toHaveCSS(
+    "font-weight",
+    "480",
+  );
+  await expect(firstRow.locator(".status-trigger")).toHaveCSS(
+    "font-size",
+    "12px",
+  );
+  await expect(page.getByRole("button", { name: "New task" })).toHaveCSS(
+    "font-weight",
+    "480",
+  );
+  if ((page.viewportSize()?.width ?? 0) > 680) {
+    const alignedColumns = [
+      ["status", ".status-trigger"],
+      ["estimate", ".estimate-trigger"],
+      ["due", ".due-trigger"],
+    ] as const;
+    for (const [name, selector] of alignedColumns) {
+      const headerBox = await page
+        .getByRole("button", { name: `Sort by ${name} ascending` })
+        .boundingBox();
+      const fieldBox = await firstRow.locator(selector).boundingBox();
+      expect(headerBox).not.toBeNull();
+      expect(fieldBox).not.toBeNull();
+      expect(Math.abs(headerBox!.x - fieldBox!.x)).toBeLessThan(10);
+    }
+  }
 
   await page.keyboard.press("n");
   const titleInput = page.getByLabel("Task title");
   await titleInput.blur();
+
+  await expect(page.locator(".task-life-cycle.is-canceling")).toHaveCount(1);
+  await expect(page.getByRole("article")).toHaveCount(3);
+  await expect(page.getByLabel("Task title")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "New task" })).toHaveCSS(
+    "opacity",
+    "1",
+  );
+
+  await page.keyboard.press("n");
+  await page.getByLabel("Task title").press("Enter");
 
   const blankTitle = page.locator(".title-button.is-empty", {
     hasText: "—",
@@ -164,7 +376,9 @@ test("keeps blank tasks and sizes title and estimate controls to content", async
   const blankTitleWidth = await blankTitle.evaluate(
     (element) => element.getBoundingClientRect().width,
   );
-  const filledTitleWidth = await rows.nth(0).locator(".title-button")
+  const filledTitleWidth = await rows
+    .filter({ hasText: "Shape the first version" })
+    .locator(".title-button")
     .evaluate((element) => element.getBoundingClientRect().width);
   expect(filledTitleWidth).toBeGreaterThan(blankTitleWidth);
 });
@@ -237,10 +451,11 @@ test("expands cleanly and uses compact fixed-size description controls", async (
   const defaultHeight = await description.evaluate(
     (element) => element.getBoundingClientRect().height,
   );
-  await description.fill(
-    Array.from({ length: 12 }, (_, index) => `Description line ${index + 1}`)
-      .join("\n"),
-  );
+  const longDescription = Array.from(
+    { length: 12 },
+    (_, index) => `Description line ${index + 1}`,
+  ).join("\n");
+  await description.fill(longDescription);
   const expandedSize = await description.evaluate((element) => ({
     height: element.getBoundingClientRect().height,
     scrollHeight: element.scrollHeight,
@@ -253,11 +468,18 @@ test("expands cleanly and uses compact fixed-size description controls", async (
 
   await expect(page.getByRole("button", { name: "Cancel" })).toHaveCSS(
     "font-size",
-    "13px",
+    "12px",
   );
   await expect(page.getByRole("button", { name: "Save" })).toHaveCSS(
     "font-size",
-    "13px",
+    "12px",
+  );
+  await page.getByRole("heading", { name: "todo" }).click();
+  await expect(description).toBeHidden();
+  await page.reload();
+  await page.getByRole("article").first().click({ position: { x: 2, y: 2 } });
+  await expect(page.getByLabel("Task description")).toHaveValue(
+    longDescription,
   );
 });
 
@@ -291,6 +513,7 @@ test("uses text clear actions in estimate and due popovers", async ({
   const initialEstimateSize = await estimatePopover.boundingBox();
   expect(estimateTriggerBox).not.toBeNull();
   expect(initialEstimateSize).not.toBeNull();
+  expect(initialEstimateSize!.width).toBeLessThan(200);
   expect(initialEstimateSize!.y).toBeGreaterThanOrEqual(
     estimateTriggerBox!.y + estimateTriggerBox!.height,
   );
@@ -310,6 +533,21 @@ test("uses text clear actions in estimate and due popovers", async ({
   const changedEstimateSize = await estimatePopover.boundingBox();
   expect(changedEstimateSize?.width).toBe(initialEstimateSize!.width);
   expect(changedEstimateSize?.height).toBe(initialEstimateSize!.height);
+  const arrowBox = await estimatePopover.locator(".stepper-buttons")
+    .boundingBox();
+  const amountBox = await page.getByLabel("Estimate amount").boundingBox();
+  const unitBox = await estimatePopover.locator(".estimate-unit-trigger")
+    .boundingBox();
+  expect(arrowBox).not.toBeNull();
+  expect(amountBox).not.toBeNull();
+  expect(unitBox).not.toBeNull();
+  expect(amountBox!.width).toBeLessThanOrEqual(40);
+  expect(unitBox!.width).toBeLessThanOrEqual(56);
+  await expect(
+    estimatePopover.locator(".estimate-unit-trigger svg"),
+  ).toHaveCSS("display", "none");
+  expect(amountBox!.x - (arrowBox!.x + arrowBox!.width)).toBeLessThanOrEqual(2);
+  expect(unitBox!.x - (amountBox!.x + amountBox!.width)).toBeLessThanOrEqual(2);
   const clearEstimate = page.getByRole("button", { name: "Clear estimate" });
   await expect(clearEstimate).toHaveText("Clear");
   const estimateRangeBox = await estimatePopover.locator(".estimate-range")
@@ -317,6 +555,13 @@ test("uses text clear actions in estimate and due popovers", async ({
   const clearEstimateBox = await clearEstimate.boundingBox();
   expect(estimateRangeBox).not.toBeNull();
   expect(clearEstimateBox).not.toBeNull();
+  expect(
+    Math.abs(
+      clearEstimateBox!.x +
+        clearEstimateBox!.width -
+        (unitBox!.x + unitBox!.width),
+    ),
+  ).toBeLessThan(3);
   expect(
     Math.abs(
       estimateRangeBox!.y +
@@ -327,7 +572,21 @@ test("uses text clear actions in estimate and due popovers", async ({
   await clearEstimate.click();
   await expect(firstRow.locator(".estimate-trigger")).toHaveText("—");
 
-  await firstRow.locator(".due-trigger").click();
+  const dueTrigger = firstRow.locator(".due-trigger");
+  const relativeDueBox = await dueTrigger.boundingBox();
+  await dueTrigger.hover();
+  const exactDueBox = await dueTrigger.boundingBox();
+  expect(relativeDueBox).not.toBeNull();
+  expect(exactDueBox).not.toBeNull();
+  if ((page.viewportSize()?.width ?? 0) > 680) {
+    expect(exactDueBox!.width).toBeGreaterThan(relativeDueBox!.width);
+  }
+  const dueFits = await dueTrigger.evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+  expect(dueFits.scrollWidth).toBeLessThanOrEqual(dueFits.clientWidth);
+  await dueTrigger.click();
   const calendarPopover = page.locator(".calendar-popover");
   const dueTriggerBox = await firstRow.locator(".due-trigger").boundingBox();
   const calendarBox = await calendarPopover.boundingBox();
@@ -348,6 +607,17 @@ test("uses text clear actions in estimate and due popovers", async ({
   await expect(selectedDay).toHaveCSS(
     "color",
     "rgba(255, 255, 255, 0.92)",
+  );
+  const selectedDayBox = await selectedDay.boundingBox();
+  const regularDayBox = await calendarPopover
+    .locator(".rdp-day:not(.rdp-selected) .rdp-day_button")
+    .first()
+    .boundingBox();
+  expect(selectedDayBox).not.toBeNull();
+  expect(regularDayBox).not.toBeNull();
+  expect(Math.abs(selectedDayBox!.width - regularDayBox!.width)).toBeLessThan(1);
+  expect(Math.abs(selectedDayBox!.height - regularDayBox!.height)).toBeLessThan(
+    1,
   );
   const clearDue = page.getByRole("button", { name: "Clear due date" });
   await expect(clearDue).toHaveText("Clear");

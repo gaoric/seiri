@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { App } from "@/App";
 import { useTaskStore } from "@/store/task-store";
 import type { Task } from "@/types";
@@ -94,13 +100,28 @@ describe("app interactions", () => {
     expect(screen.getAllByRole("article")[0]).toHaveTextContent("Zebra task");
   });
 
-  test("keeps a newly created task with a blank title", () => {
+  test("fades out a new untitled task before discarding it", async () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "New task" }));
     const title = screen.getByLabelText("Task title");
+    const createdId = useTaskStore.getState().activeOrder[0];
     fireEvent.blur(title);
 
-    const createdId = useTaskStore.getState().activeOrder.at(-1);
+    expect(document.querySelector(".task-life-cycle.is-canceling"))
+      .toBeInTheDocument();
+    await waitFor(() => {
+      expect(useTaskStore.getState().activeOrder).toEqual(["one"]);
+      expect(useTaskStore.getState().tasks[createdId]).toBeUndefined();
+    });
+  });
+
+  test("keeps an explicitly confirmed blank task", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "New task" }));
+    const title = screen.getByLabelText("Task title");
+    fireEvent.keyDown(title, { key: "Enter" });
+
+    const createdId = useTaskStore.getState().activeOrder.at(0);
     expect(createdId).toBeDefined();
     expect(useTaskStore.getState().tasks[createdId!].title).toBe("");
     expect(useTaskStore.getState().tasks[createdId!].estimate).toBeNull();

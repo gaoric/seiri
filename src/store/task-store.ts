@@ -25,6 +25,7 @@ type TaskState = PersistedState & {
   selectedId: string | null;
   expandedId: string | null;
   addTask: () => string;
+  discardTaskDraft: (id: string) => boolean;
   updateTask: (id: string, changes: Partial<Task>) => void;
   restoreTask: (id: string) => void;
   deleteTask: (id: string) => boolean;
@@ -74,10 +75,32 @@ export const useTaskStore = create<TaskState>()(
         };
         set((state) => ({
           tasks: { ...state.tasks, [id]: task },
-          activeOrder: [...state.activeOrder, id],
+          activeOrder: [id, ...state.activeOrder],
           selectedId: id,
         }));
         return id;
+      },
+
+      discardTaskDraft: (id) => {
+        const task = get().tasks[id];
+        if (!task || task.title.trim() || isArchivedStatus(task.status)) {
+          return false;
+        }
+        set((state) => {
+          const tasks = { ...state.tasks };
+          delete tasks[id];
+          const activeOrder = removeFrom(state.activeOrder, id);
+          return {
+            tasks,
+            activeOrder,
+            selectedId:
+              state.selectedId === id
+                ? activeOrder[0] ?? null
+                : state.selectedId,
+            expandedId: state.expandedId === id ? null : state.expandedId,
+          };
+        });
+        return true;
       },
 
       updateTask: (id, changes) => {

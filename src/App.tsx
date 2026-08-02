@@ -23,7 +23,13 @@ import {
   ListTodo,
   Plus,
 } from "lucide-react";
-import { AnimatePresence, MotionConfig } from "motion/react";
+import {
+  AnimatePresence,
+  motion,
+  MotionConfig,
+  useAnimate,
+  useReducedMotion,
+} from "motion/react";
 import {
   useCallback,
   useEffect,
@@ -31,7 +37,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Toaster } from "sonner";
+import { toast, Toaster } from "sonner";
 import { TaskRow } from "@/components/TaskRow";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,7 +52,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { relativeDueLabel, STATUS_LABELS } from "@/lib/task-utils";
+import {
+  formatEstimate,
+  isArchivedStatus,
+  relativeDueLabel,
+  STATUS_LABELS,
+} from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 import { useTaskStore } from "@/store/task-store";
 import type {
@@ -68,6 +79,111 @@ type ActiveSort = {
   key: TaskSortKey;
   direction: SortDirection;
 };
+
+type CreationAnimation = {
+  taskId: string;
+  orbDistance: number;
+};
+
+type CompletionAnimation = {
+  taskId: string;
+  stage: "collapsing" | "traveling";
+  startX: number;
+  startY: number;
+  deltaX: number;
+  deltaY: number;
+  targetX: number;
+  targetY: number;
+};
+
+type ArchiveTwinkle = {
+  id: number;
+  x: number;
+  y: number;
+};
+
+type ScopedAnimator = ReturnType<typeof useAnimate>[1];
+
+/**
+ * Runs the shared VHS/CRT shutdown used by both terminal task states.
+ *
+ * The card becomes a blinking hologram, burns to white from its center, then
+ * squeezes vertically and horizontally into an overlapping scan-line collapse.
+ * Kill lets that line collapse completely; Done subsequently emits a circular
+ * orb for its Archive flight. The row shell itself is never resized, so
+ * neighboring tasks close the gap only after the status update is committed.
+ */
+function runVhsShutdown(
+  animate: ScopedAnimator,
+  selector: string,
+) {
+  return animate([
+    [
+      `${selector} .task-transition-hologram`,
+      { opacity: [0, 0.78, 0.16, 0.82, 0.18, 0] },
+      {
+        duration: 0.51,
+        ease: "linear",
+        times: [0, 0.12, 0.3, 0.5, 0.72, 1],
+      },
+    ],
+    [
+      `${selector} .task-card`,
+      {
+        opacity: [1, 0.3, 1, 0.28, 0.58],
+        filter: [
+          "brightness(1)",
+          "brightness(1.8) saturate(0.5)",
+          "brightness(1.15) saturate(0.7)",
+          "brightness(1.9) saturate(0.4)",
+          "brightness(1.45) saturate(0.45)",
+        ],
+      },
+      { at: 0, duration: 0.51, ease: "linear" },
+    ],
+    [
+      `${selector} .task-vhs-flash`,
+      {
+        opacity: [0, 0.92, 1],
+        scaleX: [0.035, 0.38, 1],
+        scaleY: [0.08, 0.5, 1],
+      },
+      { at: 0.51, duration: 0.15, ease: [0.2, 0.8, 0.25, 1] },
+    ],
+    [
+      `${selector} .task-card`,
+      {
+        opacity: [0.58, 0.34, 0],
+        filter: [
+          "brightness(1.45) saturate(0.45)",
+          "brightness(2.3) saturate(0.35)",
+          "brightness(3) saturate(0)",
+        ],
+      },
+      { at: 0.51, duration: 0.15, ease: "easeIn" },
+    ],
+    [
+      `${selector} .task-vhs-flash`,
+      {
+        scaleY: [1, 0.12, 0.045],
+        filter: [
+          "brightness(1)",
+          "brightness(1.35)",
+          "brightness(1.8)",
+        ],
+      },
+      { at: 0.66, duration: 0.33, ease: [0.55, 0, 0.72, 0.35] },
+    ],
+    [
+      `${selector} .task-vhs-flash`,
+      {
+        opacity: [1, 1, 0.72, 0],
+        scaleX: [1, 0.42, 0.1, 0.006],
+      },
+      { at: 0.93, duration: 0.23, ease: [0.4, 0, 0.82, 0.35] },
+    ],
+  ]);
+}
 
 function TaskDragPreview({ task }: { task: Task }) {
   return (
@@ -99,7 +215,7 @@ function TaskDragPreview({ task }: { task: Task }) {
         <div className="estimate-cell">
           <span className="property-trigger estimate-trigger">
             {task.estimate
-              ? `${task.estimate.amount} ${task.estimate.unit}`
+              ? formatEstimate(task.estimate)
               : "—"}
           </span>
         </div>
@@ -124,12 +240,15 @@ function isTypingTarget(target: EventTarget | null) {
 }
 
 export function App() {
+  const [animationScope, animate] = useAnimate<HTMLElement>();
+  const prefersReducedMotion = useReducedMotion();
   const tasks = useTaskStore((state) => state.tasks);
   const activeOrder = useTaskStore((state) => state.activeOrder);
   const archiveOrder = useTaskStore((state) => state.archiveOrder);
   const selectedId = useTaskStore((state) => state.selectedId);
   const expandedId = useTaskStore((state) => state.expandedId);
   const addTask = useTaskStore((state) => state.addTask);
+  const discardTaskDraft = useTaskStore((state) => state.discardTaskDraft);
   const updateTask = useTaskStore((state) => state.updateTask);
   const reorderTask = useTaskStore((state) => state.reorderTask);
   const moveTask = useTaskStore((state) => state.moveTask);
@@ -139,12 +258,24 @@ export function App() {
   const setExpandedId = useTaskStore((state) => state.setExpandedId);
   const [tab, setTab] = useState<TaskTab>("active");
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
+  const [newTaskDraftId, setNewTaskDraftId] = useState<string | null>(null);
+  const [creationAnimation, setCreationAnimation] =
+    useState<CreationAnimation | null>(null);
+  const [cancelingDraftId, setCancelingDraftId] = useState<string | null>(null);
+  const [killingTaskId, setKillingTaskId] = useState<string | null>(null);
+  const [completionAnimation, setCompletionAnimation] =
+    useState<CompletionAnimation | null>(null);
+  const [archiveTwinkle, setArchiveTwinkle] =
+    useState<ArchiveTwinkle | null>(null);
   const [sorts, setSorts] = useState<Record<TaskTab, ActiveSort | null>>({
     active: null,
     archive: null,
   });
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const defaultOrders = useRef<Partial<Record<TaskTab, string[]>>>({});
+  const newTaskButtonRef = useRef<HTMLButtonElement>(null);
+  const archiveTabRef = useRef<HTMLButtonElement>(null);
+  const taskListRef = useRef<HTMLDivElement>(null);
 
   const ids = tab === "active" ? activeOrder : archiveOrder;
   const sort = sorts[tab];
@@ -165,10 +296,328 @@ export function App() {
   );
 
   const createTask = useCallback(() => {
+    if (creationAnimation) return;
+
+    const buttonRect = newTaskButtonRef.current?.getBoundingClientRect();
+    const listRect = taskListRef.current?.getBoundingClientRect();
+    const orbDistance = buttonRect && listRect
+      ? Math.max(
+          72,
+          listRect.top + 53 - (buttonRect.top + buttonRect.height / 2),
+        )
+      : 120;
     const id = addTask();
     setTab("active");
+    setNewTaskDraftId(id);
     setEditingTitleId(id);
-  }, [addTask]);
+    setCreationAnimation({ taskId: id, orbDistance });
+  }, [addTask, creationAnimation]);
+
+  const requestKill = useCallback(
+    (id: string) => {
+      const task = useTaskStore.getState().tasks[id];
+      if (
+        !task ||
+        task.status === "kill" ||
+        killingTaskId ||
+        completionAnimation
+      ) {
+        return;
+      }
+      if (isArchivedStatus(task.status)) {
+        updateTask(id, { status: "kill" });
+        return;
+      }
+      setKillingTaskId(id);
+    },
+    [completionAnimation, killingTaskId, updateTask],
+  );
+
+  const requestDone = useCallback(
+    (id: string) => {
+      const task = useTaskStore.getState().tasks[id];
+      if (
+        !task ||
+        isArchivedStatus(task.status) ||
+        killingTaskId ||
+        completionAnimation
+      ) {
+        return;
+      }
+
+      const row = document.querySelector<HTMLElement>(
+        `[data-task-id="${id}"] .task-card`,
+      );
+      const rowRect = row?.getBoundingClientRect();
+      const archiveRect = archiveTabRef.current?.getBoundingClientRect();
+      if (prefersReducedMotion || !rowRect || !archiveRect) {
+        updateTask(id, { status: "done" });
+        toast("Task completed", {
+          action: {
+            label: "Undo",
+            onClick: () => updateTask(id, { status: task.status }),
+          },
+        });
+        return;
+      }
+
+      const startX = rowRect.left + rowRect.width / 2;
+      const startY = rowRect.top + rowRect.height / 2;
+      const targetX = archiveRect.left + archiveRect.width / 2;
+      const targetY = archiveRect.top + archiveRect.height / 2;
+      setCompletionAnimation({
+        taskId: id,
+        stage: "collapsing",
+        startX,
+        startY,
+        deltaX: targetX - startX,
+        deltaY: targetY - startY,
+        targetX,
+        targetY,
+      });
+    },
+    [completionAnimation, killingTaskId, prefersReducedMotion, updateTask],
+  );
+
+  const finishKill = useCallback(
+    (id: string) => {
+      const task = useTaskStore.getState().tasks[id];
+      if (!task) {
+        setKillingTaskId(null);
+        return;
+      }
+      const previousStatus = task.status;
+      updateTask(id, { status: "kill" });
+      setKillingTaskId(null);
+      toast("Task archived", {
+        action: {
+          label: "Undo",
+          onClick: () => updateTask(id, { status: previousStatus }),
+        },
+      });
+    },
+    [updateTask],
+  );
+
+  const startCompletionTravel = useCallback((id: string) => {
+    setCompletionAnimation((current) =>
+      current?.taskId === id && current.stage === "collapsing"
+        ? { ...current, stage: "traveling" }
+        : current,
+    );
+  }, []);
+
+  useEffect(() => {
+    const completingId =
+      completionAnimation?.stage === "collapsing"
+        ? completionAnimation.taskId
+        : null;
+    const id = killingTaskId ?? completingId;
+    if (!id) return;
+
+    const completing = Boolean(completingId);
+    const selector = completing
+      ? ".task-life-cycle.is-completing"
+      : ".task-life-cycle.is-killing";
+    const controls = runVhsShutdown(animate, selector);
+    controls.then(() => {
+      if (completing) startCompletionTravel(id);
+      else finishKill(id);
+    });
+    return () => controls.stop();
+  }, [
+    animate,
+    completionAnimation,
+    finishKill,
+    killingTaskId,
+    startCompletionTravel,
+  ]);
+
+  const finishCompletion = useCallback(
+    (animation: CompletionAnimation) => {
+      const task = useTaskStore.getState().tasks[animation.taskId];
+      if (!task) {
+        setCompletionAnimation(null);
+        return;
+      }
+
+      const previousStatus = task.status;
+      updateTask(animation.taskId, { status: "done" });
+      setCompletionAnimation(null);
+      setArchiveTwinkle({
+        id: Date.now(),
+        x: animation.targetX,
+        y: animation.targetY,
+      });
+      toast("Task completed", {
+        action: {
+          label: "Undo",
+          onClick: () =>
+            updateTask(animation.taskId, { status: previousStatus }),
+        },
+      });
+    },
+    [updateTask],
+  );
+
+  const finishDraftCancellation = useCallback(
+    (id: string) => {
+      discardTaskDraft(id);
+      setCancelingDraftId(null);
+      setNewTaskDraftId((current) => (current === id ? null : current));
+    },
+    [discardTaskDraft],
+  );
+
+  useEffect(() => {
+    if (!creationAnimation) return;
+    if (prefersReducedMotion) {
+      setExpandedId(creationAnimation.taskId);
+      setCreationAnimation(null);
+      return;
+    }
+
+    const orbDistance = creationAnimation.orbDistance;
+    const controls = animate([
+      [
+        ".new-task-button",
+        {
+          opacity: [1, 0],
+          clipPath: [
+            "inset(0 0 0 0 round 6px)",
+            "inset(50% 50% 50% 50% round 50%)",
+          ],
+        },
+        { duration: 0.18, ease: "easeIn" },
+      ],
+      [
+        ".new-task-light-orb",
+        {
+          opacity: [0, 1, 1, 0.9, 0],
+          scale: [0.35, 1, 0.85, 1.15, 0.2],
+          y: [
+            0,
+            orbDistance * 0.12,
+            orbDistance * 0.55,
+            orbDistance * 0.9,
+            orbDistance,
+          ],
+        },
+        {
+          at: 0.08,
+          duration: 0.56,
+          ease: [0.34, 0.02, 0.58, 1],
+          times: [0, 0.12, 0.72, 0.9, 1],
+        },
+      ],
+      [
+        ".task-row-shell.is-materializing",
+        {
+          opacity: [0, 0.35, 1],
+          clipPath: [
+            "inset(100% 0 0 0 round 9px)",
+            "inset(44% 0 0 0 round 9px)",
+            "inset(0 0 0 0 round 9px)",
+          ],
+          filter: [
+            "brightness(1.7) saturate(0.6)",
+            "brightness(1.35) saturate(0.72)",
+            "brightness(1.22) saturate(0.8)",
+          ],
+        },
+        { at: 0.62, duration: 0.26, ease: "easeOut" },
+      ],
+      [
+        ".new-task-hologram",
+        {
+          opacity: [0, 0.9, 0.55, 0.18, 0],
+          clipPath: [
+            "inset(100% 0 0 0 round 9px)",
+            "inset(58% 0 0 0 round 9px)",
+            "inset(0 0 0 0 round 9px)",
+            "inset(0 0 0 0 round 9px)",
+            "inset(0 0 0 0 round 9px)",
+          ],
+        },
+        { at: 0.62, duration: 0.8, ease: "linear" },
+      ],
+      [
+        ".task-row-shell.is-materializing",
+        { opacity: [1, 0.2, 1, 0.24, 1], filter: "none" },
+        {
+          at: 0.9,
+          duration: 0.51,
+          ease: "linear",
+        },
+      ],
+      [
+        ".new-task-button",
+        {
+          opacity: [1, 1],
+          clipPath: [
+            "inset(0 100% 0 0 round 6px)",
+            "inset(0 0 0 0 round 6px)",
+          ],
+          filter: [
+            "brightness(1.7) drop-shadow(0 0 7px rgba(194, 230, 255, 0.7))",
+            "brightness(1) drop-shadow(0 0 0 rgba(194, 230, 255, 0))",
+          ],
+        },
+        { at: 1.33, duration: 0.24, ease: "easeOut" },
+      ],
+      [
+        ".new-task-button-loader",
+        {
+          opacity: [0, 0.9, 0],
+          scaleX: [0, 1, 1],
+        },
+        {
+          at: 1.33,
+          duration: 0.24,
+          ease: "easeOut",
+          times: [0, 0.72, 1],
+        },
+      ],
+      [
+        ".new-task-button",
+        {
+          opacity: [1, 0.22, 1, 0.22, 1],
+          filter: [
+            "brightness(1)",
+            "brightness(1.8)",
+            "brightness(1)",
+            "brightness(1.8)",
+            "brightness(1)",
+          ],
+        },
+        { at: 1.59, duration: 0.2, ease: "linear" },
+      ],
+      [
+        ".new-task-button",
+        { opacity: [1, 1] },
+        { at: 1.79, duration: 0.14, ease: "linear" },
+      ],
+    ]);
+
+    let canceled = false;
+    controls.then(() => {
+      if (canceled) return;
+      if (useTaskStore.getState().tasks[creationAnimation.taskId]) {
+        setExpandedId(creationAnimation.taskId);
+      }
+      setCreationAnimation((current) =>
+        current?.taskId === creationAnimation.taskId ? null : current,
+      );
+    });
+    return () => {
+      canceled = true;
+      controls.stop();
+      const button = newTaskButtonRef.current;
+      button?.style.removeProperty("opacity");
+      button?.style.removeProperty("clip-path");
+      button?.style.removeProperty("filter");
+    };
+  }, [animate, creationAnimation, prefersReducedMotion, setExpandedId]);
 
   const clearSort = useCallback((targetTab: TaskTab) => {
     delete defaultOrders.current[targetTab];
@@ -227,7 +676,7 @@ export function App() {
         moveTask(tab, selectedId, event.key === "ArrowUp" ? -1 : 1);
       } else if (event.shiftKey && event.key === "Delete") {
         event.preventDefault();
-        updateTask(selectedId, { status: "kill" });
+        requestKill(selectedId);
       }
     }
 
@@ -238,6 +687,7 @@ export function App() {
     createTask,
     expandedId,
     moveTask,
+    requestKill,
     selectedId,
     setExpandedId,
     setSelectedId,
@@ -288,7 +738,11 @@ export function App() {
     <MotionConfig reducedMotion="user">
       <TooltipProvider delay={350}>
         <main className="app-shell">
-          <section className="workspace" aria-label="Todo list">
+          <section
+            ref={animationScope}
+            className="workspace"
+            aria-label="Todo list"
+          >
             <header className="workspace-header">
               <h1>todo</h1>
             </header>
@@ -304,7 +758,14 @@ export function App() {
                     Active
                     <span>{activeOrder.length}</span>
                   </TabsTrigger>
-                  <TabsTrigger value="archive">
+                  <TabsTrigger
+                    ref={archiveTabRef}
+                    value="archive"
+                    className={cn(
+                      (completionAnimation || archiveTwinkle) &&
+                        "is-absorbing",
+                    )}
+                  >
                     <Archive />
                     Archive
                     <span>{archiveOrder.length}</span>
@@ -336,14 +797,36 @@ export function App() {
                       <span>Shift + ↑ / ↓ · reorder</span>
                     </TooltipContent>
                   </Tooltip>
-                  <Button
-                    size="sm"
-                    className="new-task-button"
-                    onClick={createTask}
+                  <div
+                    className={cn(
+                      "new-task-launcher",
+                      creationAnimation && "is-creating",
+                    )}
                   >
-                    <Plus />
-                    New task
-                  </Button>
+                    <Button
+                      key={creationAnimation ? "creating" : "idle"}
+                      ref={newTaskButtonRef}
+                      size="sm"
+                      className="new-task-button"
+                      onClick={createTask}
+                      disabled={Boolean(creationAnimation)}
+                    >
+                      <Plus />
+                      New task
+                    </Button>
+                    {creationAnimation && (
+                      <>
+                        <span
+                          className="new-task-light-orb"
+                          aria-hidden="true"
+                        />
+                        <span
+                          className="new-task-button-loader"
+                          aria-hidden="true"
+                        />
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -383,7 +866,11 @@ export function App() {
                 <span />
               </div>
 
-              <TabsContent value={tab} className="task-list">
+              <TabsContent
+                ref={taskListRef}
+                value={tab}
+                className="task-list"
+              >
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCorners}
@@ -399,19 +886,103 @@ export function App() {
                       {visibleIds.map((id) => {
                         const task = tasks[id];
                         if (!task) return null;
+                        const isCanceling = cancelingDraftId === id;
+                        const isKilling = killingTaskId === id;
+                        const isCompleting =
+                          completionAnimation?.taskId === id;
+                        const isCompletionCollapsing =
+                          isCompleting &&
+                          completionAnimation?.stage === "collapsing";
                         return (
-                          <div key={id} data-task-id={id}>
-                            <TaskRow
-                              task={task}
-                              tab={tab}
-                              selected={selectedId === id}
-                              expanded={expandedId === id}
-                              editTitleRequested={editingTitleId === id}
-                              onEditTitleHandled={() =>
-                                setEditingTitleId(null)
+                          <motion.div
+                            key={id}
+                            data-task-id={id}
+                            layout="position"
+                            transition={{
+                              layout: {
+                                duration: 0.34,
+                                ease: [0.22, 1, 0.36, 1],
+                              },
+                            }}
+                            className={cn(
+                              "task-row-shell",
+                              creationAnimation?.taskId === id &&
+                                "is-materializing",
+                            )}
+                          >
+                            <motion.div
+                              className={cn(
+                                "task-life-cycle",
+                                isCanceling && "is-canceling",
+                                isKilling && "is-killing",
+                                isCompleting && "is-completing",
+                              )}
+                              initial={{ opacity: 1 }}
+                              animate={
+                                isCanceling
+                                  ? { opacity: 0 }
+                                  : { opacity: 1 }
                               }
-                            />
-                          </div>
+                              transition={
+                                isCanceling
+                                  ? { duration: 0.18, ease: "easeOut" }
+                                  : { duration: 0.12, ease: "easeOut" }
+                              }
+                              onAnimationComplete={() => {
+                                if (isCanceling) finishDraftCancellation(id);
+                              }}
+                            >
+                              <TaskRow
+                                task={task}
+                                tab={tab}
+                                selected={selectedId === id}
+                                expanded={expandedId === id}
+                                statusOverride={
+                                  isKilling
+                                    ? "kill"
+                                    : isCompleting
+                                      ? "done"
+                                      : undefined
+                                }
+                                editTitleRequested={editingTitleId === id}
+                                newTaskDraft={newTaskDraftId === id}
+                                onEditTitleHandled={() =>
+                                  setEditingTitleId(null)
+                                }
+                                onNewTaskDraftFinished={() =>
+                                  setNewTaskDraftId((current) =>
+                                    current === id ? null : current,
+                                  )
+                                }
+                                onNewTaskDraftCanceled={() => {
+                                  setCancelingDraftId(id);
+                                  setCreationAnimation((current) =>
+                                    current?.taskId === id ? null : current,
+                                  );
+                                }}
+                                onKillRequested={() => requestKill(id)}
+                                onDoneRequested={() => requestDone(id)}
+                              />
+                              {creationAnimation?.taskId === id && (
+                                <span
+                                  className="new-task-hologram"
+                                  aria-hidden="true"
+                                />
+                              )}
+                              {(isKilling || isCompletionCollapsing) && (
+                                <>
+                                  <span
+                                    className="task-transition-hologram"
+                                    aria-hidden="true"
+                                  />
+                                  <span
+                                    className="task-vhs-flash"
+                                    aria-hidden="true"
+                                  />
+                                </>
+                              )}
+                            </motion.div>
+                          </motion.div>
                         );
                       })}
                     </AnimatePresence>
@@ -444,6 +1015,50 @@ export function App() {
                 )}
               </TabsContent>
             </Tabs>
+
+            {completionAnimation?.stage === "traveling" && (
+              <motion.span
+                key={completionAnimation.taskId}
+                className="task-complete-light-orb"
+                aria-hidden="true"
+                style={{
+                  left: completionAnimation.startX,
+                  top: completionAnimation.startY,
+                }}
+                initial={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+                animate={{
+                  opacity: [1, 1, 1, 0],
+                  scale: [1, 1.06, 0.72, 0.2],
+                  x: [0, 0, completionAnimation.deltaX, completionAnimation.deltaX],
+                  y: [0, 0, completionAnimation.deltaY, completionAnimation.deltaY],
+                }}
+                transition={{
+                  duration: 1.22,
+                  ease: [0.42, 0, 0.24, 1],
+                  times: [0, 0.12, 0.9, 1],
+                }}
+                onAnimationComplete={() =>
+                  finishCompletion(completionAnimation)
+                }
+              />
+            )}
+
+            {archiveTwinkle && (
+              <motion.span
+                key={archiveTwinkle.id}
+                className="archive-twinkle"
+                aria-hidden="true"
+                style={{ left: archiveTwinkle.x, top: archiveTwinkle.y }}
+                initial={{ opacity: 0, scale: 0.2, rotate: -20 }}
+                animate={{
+                  opacity: [0, 1, 0.7, 0],
+                  scale: [0.2, 1.4, 0.8, 0],
+                  rotate: [-20, 0, 12, 20],
+                }}
+                transition={{ duration: 0.38, ease: "easeOut" }}
+                onAnimationComplete={() => setArchiveTwinkle(null)}
+              />
+            )}
 
             <footer>
               <span>Stored on this device</span>

@@ -1,10 +1,36 @@
 @import "tailwindcss";
 @import "react-day-picker/style.css";
 
+@font-face {
+  font-family: "Geist Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2")
+    format("woff2");
+}
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2")
+    format("woff2");
+}
+
 :root {
+  --task-field-font-size: 12px;
+  --task-field-font-weight: 480;
+  --task-title-font-size: 14px;
+  --vhs-light-color: #fff;
+  --vhs-light-shadow:
+    0 0 12px rgba(255, 255, 255, 0.95),
+    0 0 30px rgba(193, 229, 255, 0.66),
+    0 0 48px rgba(151, 211, 255, 0.34);
   color-scheme: dark;
   font-family:
-    Aptos, "Avenir Next", "Trebuchet MS", Inter, ui-sans-serif, system-ui,
+    'Geist Variable', 'Inter Variable', ui-sans-serif, system-ui,
     -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: #111214;
   color: #f5f5f4;
@@ -82,7 +108,14 @@ button svg {
   gap: 7px;
 }
 
+.new-task-launcher {
+  position: relative;
+  z-index: 30;
+}
+
 .new-task-button {
+  position: relative;
+  z-index: 1;
   height: 29px;
   padding: 0 9px;
 }
@@ -90,6 +123,55 @@ button svg {
 .new-task-button svg {
   width: 12px;
   height: 12px;
+}
+
+/* Motion owns the creation timeline; CSS only supplies its visual materials. */
+.new-task-launcher.is-creating .new-task-button {
+  pointer-events: none;
+}
+
+.new-task-light-orb {
+  position: absolute;
+  z-index: 40;
+  top: 50%;
+  left: 50%;
+  width: 11px;
+  height: 11px;
+  margin: -5.5px 0 0 -5.5px;
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: center;
+}
+
+.new-task-light-orb::before {
+  position: absolute;
+  inset: 1px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #fff, #dfe9f2 78%);
+  box-shadow:
+    0 0 8px rgba(255, 255, 255, 0.9),
+    0 0 18px rgba(192, 226, 255, 0.55);
+  content: "";
+}
+
+/* A luminous plate grows left-to-right beneath the rebuilding button. */
+.new-task-button-loader {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  border: 1px solid rgba(201, 234, 255, 0.76);
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    rgba(190, 229, 255, 0.2),
+    rgba(255, 255, 255, 0.92)
+  );
+  box-shadow:
+    0 0 8px rgba(204, 235, 255, 0.65),
+    0 0 18px rgba(156, 215, 255, 0.32);
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: left center;
 }
 
 .shortcut-help {
@@ -154,8 +236,8 @@ button svg {
   border: 0;
   color: rgba(255, 255, 255, 0.38);
   background: transparent;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 480;
   transition: color 140ms ease;
 }
 
@@ -173,6 +255,12 @@ button svg {
   color: rgba(255, 255, 255, 0.88);
 }
 
+/* The Archive target glows while a completed-task orb is being absorbed. */
+.tab-row [role="tab"].is-absorbing {
+  color: rgba(222, 242, 255, 0.92);
+  text-shadow: 0 0 9px rgba(182, 226, 255, 0.5);
+}
+
 .tab-row [role="tab"][data-active]::after {
   position: absolute;
   right: 0;
@@ -183,11 +271,14 @@ button svg {
   content: "";
 }
 
-/* Headers and task rows share tracks so labels stay aligned with controls. */
+/*
+ * Column labels are task headers: pri, title, status, estimate, due.
+ * Headers and task rows share tracks so labels stay aligned with controls.
+ */
 .column-labels,
 .task-main {
   display: grid;
-  grid-template-columns: 12px 40px minmax(165px, 1fr) 128px 94px 92px 48px;
+  grid-template-columns: 12px 40px minmax(165px, 1fr) 128px 94px 116px 48px;
   column-gap: 5px;
   align-items: center;
 }
@@ -196,8 +287,8 @@ button svg {
   min-height: 28px;
   padding: 0 11px;
   color: rgba(255, 255, 255, 0.28);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 480;
   text-transform: lowercase;
 }
 
@@ -215,6 +306,19 @@ button svg {
   font-weight: inherit;
   text-transform: inherit;
   transition: color 140ms ease;
+}
+
+/* Match metadata headers to the inset controls in their row grid tracks. */
+.column-labels button:nth-of-type(3) {
+  margin-left: 6px;
+}
+
+.column-labels button:nth-of-type(4) {
+  margin-left: 5px;
+}
+
+.column-labels button:nth-of-type(5) {
+  margin-left: 8px;
 }
 
 .column-labels button:hover,
@@ -238,6 +342,127 @@ button svg {
 
 .task-list {
   outline: none;
+}
+
+.task-row-shell {
+  position: relative;
+}
+
+.task-life-cycle {
+  position: relative;
+  display: flow-root;
+}
+
+.task-life-cycle:is(.is-canceling, .is-killing, .is-completing) {
+  pointer-events: none;
+}
+
+/*
+ * The shell keeps its full height so sibling rows can settle downward while
+ * the new card is revealed from its bottom edge with two hologram pulses.
+ */
+.task-row-shell.is-materializing {
+  overflow: hidden;
+  border-radius: 9px;
+  opacity: 0;
+  clip-path: inset(100% 0 0 0 round 9px);
+  filter: brightness(1.7) saturate(0.6);
+}
+
+.new-task-hologram,
+.task-transition-hologram {
+  position: absolute;
+  z-index: 10;
+  /* The task card owns an 8px bottom gap; exclude it from the hologram. */
+  inset: 0 0 8px;
+  border: 1px solid rgba(199, 235, 255, 0.5);
+  border-radius: 9px;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(215, 241, 255, 0.12) 0,
+      rgba(215, 241, 255, 0.12) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    linear-gradient(to top, rgba(178, 225, 255, 0.2), transparent 72%);
+  box-shadow: 0 0 18px rgba(157, 218, 255, 0.2) inset;
+  pointer-events: none;
+}
+
+.new-task-hologram {
+  opacity: 0;
+  clip-path: inset(100% 0 0 0 round 9px);
+}
+
+.task-transition-hologram {
+  opacity: 0;
+}
+
+/*
+ * Motion scales this white plate in two axes to mimic a VHS/CRT power-off:
+ * center flash -> horizontal scan line -> disappearing point.
+ */
+.task-vhs-flash {
+  position: absolute;
+  z-index: 12;
+  /* The task card owns an 8px bottom gap; keep the flash centered on the card. */
+  inset: 0 0 8px;
+  border-radius: 9px;
+  background: var(--vhs-light-color);
+  box-shadow: var(--vhs-light-shadow);
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.035, 0.08);
+  transform-origin: center;
+}
+
+/* Done emits this round orb once the VHS line has collapsed. */
+.task-complete-light-orb {
+  position: fixed;
+  z-index: 100;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #fff, #dceeff 72%);
+  box-shadow:
+    0 0 8px rgba(255, 255, 255, 0.95),
+    0 0 20px rgba(162, 218, 255, 0.72),
+    0 0 34px rgba(132, 200, 255, 0.38);
+  pointer-events: none;
+}
+
+/* Two luminous strokes form a tiny star at the orb's destination. */
+.archive-twinkle {
+  position: fixed;
+  z-index: 101;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  filter: drop-shadow(0 0 5px rgba(195, 231, 255, 0.9));
+  pointer-events: none;
+}
+
+.archive-twinkle::before,
+.archive-twinkle::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 999px;
+  background: #f7fcff;
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+.archive-twinkle::before {
+  width: 2px;
+  height: 18px;
+}
+
+.archive-twinkle::after {
+  width: 18px;
+  height: 2px;
 }
 
 .task-card {
@@ -276,7 +501,6 @@ button svg {
 .task-main {
   min-height: 53px;
   padding: 0 9px 0 7px;
-  font-weight: 500;
 }
 
 /*
@@ -357,8 +581,6 @@ body.is-dragging-task * {
   border: 0;
   border-radius: 999px;
   color: #fff;
-  font-size: 13px;
-  font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 
@@ -368,7 +590,7 @@ body.is-dragging-task * {
 
 .priority-0 {
   color: #fff;
-  background: #d84d42;
+  background: #C41E3A;
   box-shadow: 0 0 0 1px rgba(255, 151, 142, 0.2) inset;
 }
 
@@ -392,6 +614,10 @@ body.is-dragging-task * {
   padding-left: 6px;
 }
 
+.due-cell {
+  padding-left: 8px;
+}
+
 .title-button,
 .title-input {
   display: block;
@@ -405,8 +631,6 @@ body.is-dragging-task * {
   border-radius: 5px;
   color: rgba(255, 255, 255, 0.86);
   background: transparent;
-  font-size: 15px;
-  font-weight: 560;
   line-height: 33px;
   text-align: left;
   text-overflow: ellipsis;
@@ -425,7 +649,6 @@ body.is-dragging-task * {
 
 .title-button.is-empty {
   color: rgba(255, 255, 255, 0.3);
-  font-weight: 500;
 }
 
 .status-trigger {
@@ -437,7 +660,6 @@ body.is-dragging-task * {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 999px;
   padding: 0 8px;
-  font-size: 13px;
   white-space: nowrap;
 }
 
@@ -453,6 +675,7 @@ body.is-dragging-task * {
   text-overflow: clip;
   white-space: nowrap;
   -webkit-line-clamp: unset;
+  line-clamp: unset;
 }
 
 .status-in-progress {
@@ -485,7 +708,7 @@ body.is-dragging-task * {
 
 .property-trigger {
   display: block;
-  width: 100%;
+  width: 85%;
   height: 30px;
   padding: 0 5px;
   overflow: hidden;
@@ -493,7 +716,6 @@ body.is-dragging-task * {
   border-radius: 5px;
   color: rgba(255, 255, 255, 0.42);
   background: transparent;
-  font-size: 14px;
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -514,9 +736,11 @@ body.is-dragging-task * {
 
 .due-trigger {
   position: relative;
+  width: fit-content;
+  max-width: 100%;
 }
 
-/* Desktop swaps relative and exact due labels without changing column width. */
+/* Desktop swaps labels and lets the button resize to the visible label. */
 .due-exact {
   display: none;
 }
@@ -559,6 +783,10 @@ body.is-dragging-task * {
   color: #ff8175;
 }
 
+.description-panel-clip {
+  overflow: hidden;
+}
+
 .description-panel {
   padding: 0 13px 12px 65px;
 }
@@ -574,8 +802,6 @@ body.is-dragging-task * {
   padding: 10px 11px;
   color: rgba(255, 255, 255, 0.78);
   background: rgba(0, 0, 0, 0.14);
-  font-size: 13px;
-  font-weight: 600;
   line-height: 1.6;
   outline: none;
   transition: border-color 140ms ease;
@@ -608,36 +834,30 @@ body.is-dragging-task * {
   height: 12px;
 }
 
-.tab-actions .new-task-button,
-.description-actions [data-slot="button"],
-.clear-property-button {
-  font-size: 13px;
-  font-weight: 600;
-}
-
 .clear-property-button {
   height: 26px;
   padding: 0 7px;
 }
 
 .estimate-popover {
-  /* Stable dimensions prevent the unit label and amount from resizing the menu. */
-  width: 248px;
-  height: 104px;
+  /* Controls define the compact fixed width instead of their changing values. */
+  width: 142px;
+  height: 96px;
 }
 
 .estimate-controls {
   display: flex;
-  height: 34px;
+  width: 114px;
+  height: 32px;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .stepper-buttons {
   display: grid;
-  width: 24px;
+  width: 18px;
   height: 32px;
-  flex: 0 0 24px;
+  flex: 0 0 18px;
 }
 
 .stepper-buttons button {
@@ -661,19 +881,18 @@ body.is-dragging-task * {
 }
 
 .estimate-amount {
-  width: 62px;
-  flex: 0 0 62px;
+  width: 38px;
+  flex: 0 0 38px;
 }
 
 .estimate-amount input {
   width: 100%;
-  height: 32px;
+  height: 26px;
   border: 0;
   border-radius: 5px;
-  padding: 0 7px;
+  padding: 0 5px;
   color: rgba(255, 255, 255, 0.78);
   background: transparent;
-  font-size: 12px;
   font-variant-numeric: tabular-nums;
   outline: none;
   transition:
@@ -688,20 +907,26 @@ body.is-dragging-task * {
 }
 
 .estimate-unit-trigger {
-  width: 92px;
-  height: 32px;
-  flex: 0 0 92px;
+  width: 54px;
+  height: 26px;
+  flex: 0 0 54px;
+  justify-content: flex-start;
+  gap: 0;
   border: 0;
-  padding: 0 7px;
-  font-size: 12px;
+  padding: 0 5px;
+}
+
+.estimate-unit-trigger svg {
+  display: none;
 }
 
 .property-popover-foot {
   display: flex;
+  width: 114px;
   min-height: 28px;
   align-items: center;
   justify-content: space-between;
-  margin-top: 10px;
+  margin-top: 6px;
 }
 
 .estimate-range {
@@ -718,11 +943,15 @@ body.is-dragging-task * {
 .status-option {
   width: max-content;
   height: 28px;
-  margin: 3px;
+  margin: 3px 3px 3px 27px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 999px;
-  padding: 0 10px 0 28px;
+  padding: 0 10px;
   cursor: pointer;
+}
+
+.status-option [data-slot="select-item-indicator"] {
+  left: -23px;
 }
 
 .status-option[data-highlighted] {
@@ -767,8 +996,31 @@ body.is-dragging-task * {
 .rdp-selected .rdp-day_button {
   color: rgba(255, 255, 255, 0.92);
   background: rgba(255, 255, 255, 0.16);
-  font-weight: 600;
+  font-weight: inherit;
   transform: none;
+}
+
+/*
+ * Task controls share one typography source; the title only changes size.
+ * Popovers are portaled, so they must opt in separately from task-card.
+ */
+.task-card :is(button, input, textarea),
+.task-drag-preview :is(
+  .priority-trigger,
+  .title-button,
+  .status-trigger,
+  .property-trigger
+),
+.new-task-button,
+[data-slot="popover-content"] :is(button, input),
+[data-slot="select-content"] [role="option"] {
+  font-size: var(--task-field-font-size);
+  font-weight: var(--task-field-font-weight);
+}
+
+.task-card :is(.title-button, .title-input),
+.task-drag-preview .title-button {
+  font-size: var(--task-title-font-size);
 }
 
 .calendar-foot {
@@ -936,6 +1188,7 @@ footer {
 
   .due-cell {
     grid-area: due;
+    padding-left: 0;
   }
 
   .row-actions {
@@ -950,6 +1203,11 @@ footer {
   .property-trigger {
     width: auto;
     padding-right: 7px;
+  }
+
+  .due-trigger {
+    width: fit-content;
+    max-width: 100%;
   }
 
   .estimate-trigger::before {

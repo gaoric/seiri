@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   daysUntil,
+  formatEstimate,
   isArchivedStatus,
   moveItem,
   normalizeEstimateAmount,
@@ -60,6 +61,11 @@ describe("estimate normalization", () => {
     expect(normalizeEstimateAmount("", "hours")).toBe(1);
     expect(normalizeEstimateAmount("nope", "days")).toBe(1);
   });
+
+  test("uses singular units for an amount of one", () => {
+    expect(formatEstimate({ amount: 1, unit: "minutes" })).toBe("1 minute");
+    expect(formatEstimate({ amount: 2, unit: "minutes" })).toBe("2 minutes");
+  });
 });
 
 describe("task utilities", () => {
@@ -74,6 +80,7 @@ describe("task utilities", () => {
     expect(daysUntil("2026-03-08", today)).toBe(1);
     expect(daysUntil("2026-03-06", today)).toBe(-1);
     expect(relativeDueLabel("2026-03-08", today)).toBe("1 day");
+    expect(relativeDueLabel("2026-03-07", today)).toBe("today");
   });
 
   test("moves items without mutating the source", () => {

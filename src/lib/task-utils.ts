@@ -1,4 +1,5 @@
 import type {
+  Estimate,
   EstimateUnit,
   SortDirection,
   Task,
@@ -41,6 +42,13 @@ export function normalizeEstimateAmount(
   return Math.min(max, Math.max(min, Math.round(parsed)));
 }
 
+export function formatEstimate(estimate: Estimate) {
+  const unit = estimate.amount === 1
+    ? estimate.unit.slice(0, -1)
+    : estimate.unit;
+  return `${estimate.amount} ${unit}`;
+}
+
 export function isArchivedStatus(status: TaskStatus) {
   return status === "done" || status === "kill";
 }
@@ -73,6 +81,7 @@ export function daysUntil(dateKey: string, today = new Date()) {
 
 export function relativeDueLabel(dateKey: string, today = new Date()) {
   const days = daysUntil(dateKey, today);
+  if (days === 0) return "today";
   return `${Math.abs(days)} ${Math.abs(days) === 1 ? "day" : "days"}`;
 }
 

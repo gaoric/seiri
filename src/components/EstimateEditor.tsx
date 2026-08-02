@@ -16,6 +16,7 @@ import {
 import {
   ESTIMATE_BOUNDS,
   ESTIMATE_UNITS,
+  formatEstimate,
   normalizeEstimateAmount,
 } from "@/lib/task-utils";
 import type { Estimate, EstimateUnit } from "@/types";
@@ -87,7 +88,7 @@ export function EstimateEditor({ value, onChange }: EstimateEditorProps) {
           />
         }
       >
-        {value ? `${value.amount} ${value.unit}` : "—"}
+        {value ? formatEstimate(value) : "—"}
       </PopoverTrigger>
       <PopoverContent className="estimate-popover">
         <div className="estimate-controls">

@@ -98,7 +98,10 @@ export function SelectItem({
     >
       <SelectPrimitive.ItemIndicator
         render={
-          <span className="absolute left-2 flex size-4 items-center justify-center" />
+          <span
+            data-slot="select-item-indicator"
+            className="absolute left-2 flex size-4 items-center justify-center"
+          />
         }
       >
         <Check className="size-3.5" />

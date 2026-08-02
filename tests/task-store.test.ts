@@ -30,6 +30,23 @@ beforeEach(() => {
 });
 
 describe("task store", () => {
+  test("creates new tasks at the top of Active", () => {
+    const addedId = useTaskStore.getState().addTask();
+    expect(useTaskStore.getState().activeOrder).toEqual([
+      addedId,
+      "active",
+      "other",
+    ]);
+  });
+
+  test("discards only untitled active drafts", () => {
+    const addedId = useTaskStore.getState().addTask();
+    expect(useTaskStore.getState().discardTaskDraft(addedId)).toBeTrue();
+    expect(useTaskStore.getState().tasks[addedId]).toBeUndefined();
+    expect(useTaskStore.getState().activeOrder).toEqual(["active", "other"]);
+    expect(useTaskStore.getState().discardTaskDraft("active")).toBeFalse();
+  });
+
   test("moves done and killed tasks into archive", () => {
     useTaskStore.getState().updateTask("active", { status: "done" });
     expect(useTaskStore.getState().activeOrder).toEqual(["other"]);
