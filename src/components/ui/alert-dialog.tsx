@@ -73,7 +73,7 @@ export function AlertDialogCancel({
     <AlertDialogPrimitive.Close
       data-slot="alert-dialog-cancel"
       className={cn(className)}
-      render={<Button variant={variant} />}
+      render={<Button variant={variant} data-ui-sound="close" />}
       {...props}
     />
   );
@@ -90,7 +90,9 @@ export function AlertDialogAction({
     <AlertDialogPrimitive.Close
       data-slot="alert-dialog-action"
       className={cn(className)}
-      render={<Button variant={variant} size={size} />}
+      render={
+        <Button variant={variant} size={size} data-ui-sound="close" />
+      }
       {...props}
     />
   );

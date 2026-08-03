@@ -17,11 +17,12 @@ import {
 import { cn } from "@/lib/utils";
 
 type DueDateEditorProps = {
+  ownerId: string;
   value: string | null;
   onChange: (value: string | null) => void;
 };
 
-export function DueDateEditor({ value, onChange }: DueDateEditorProps) {
+export function DueDateEditor({ ownerId, value, onChange }: DueDateEditorProps) {
   const overdue = value ? daysUntil(value) < 0 : false;
 
   return (
@@ -48,7 +49,10 @@ export function DueDateEditor({ value, onChange }: DueDateEditorProps) {
           "—"
         )}
       </PopoverTrigger>
-      <PopoverContent className="calendar-popover">
+      <PopoverContent
+        className="calendar-popover"
+        data-task-editor-for={ownerId}
+      >
         <DayPicker
           mode="single"
           defaultMonth={value ? keyToDate(value) : undefined}
@@ -66,6 +70,7 @@ export function DueDateEditor({ value, onChange }: DueDateEditorProps) {
               variant="ghost"
               size="sm"
               className="clear-property-button"
+              data-ui-sound="close"
               onClick={() => onChange(null)}
               aria-label="Clear due date"
             >

@@ -42,6 +42,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { requestUiSound } from "@/hooks/use-ui-sounds";
 import { isArchivedStatus, STATUS_LABELS } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 import { useTaskStore } from "@/store/task-store";
@@ -89,6 +90,8 @@ export function TaskRow({
   const titleRef = useRef<HTMLInputElement>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const taskRef = useRef<HTMLElement>(null);
+  const cancelDraftRef = useRef(onNewTaskDraftCanceled);
+  const draftChangedRef = useRef(false);
   const {
     attributes,
     listeners,
@@ -117,6 +120,10 @@ export function TaskRow({
     titleRef.current?.select();
   }, [editingTitle]);
 
+  useEffect(() => {
+    cancelDraftRef.current = onNewTaskDraftCanceled;
+  }, [onNewTaskDraftCanceled]);
+
   useLayoutEffect(() => {
     if (!expanded || !descriptionRef.current) return;
     descriptionRef.current.style.height = "auto";
@@ -137,7 +144,9 @@ export function TaskRow({
       ) {
         return;
       }
-      updateTask(task.id, { description: descriptionDraft.trim() });
+      const description = descriptionDraft.trim();
+      if (description !== task.description) finishChangedDraft();
+      updateTask(task.id, { description });
       setExpandedId(null);
     }
 
@@ -148,23 +157,63 @@ export function TaskRow({
     descriptionDraft,
     expanded,
     setExpandedId,
+    task.description,
     task.id,
     updateTask,
   ]);
 
-  function saveTitle() {
+  useEffect(() => {
+    if (!newTaskDraft) return;
+
+    function cancelUntouchedDraftOnOutsideClick(event: globalThis.MouseEvent) {
+      const eventPath = event.composedPath();
+      const clickedOwnedEditor = eventPath.some(
+        (target) =>
+          target instanceof HTMLElement &&
+          target.dataset.taskEditorFor === task.id,
+      );
+      if (
+        draftChangedRef.current ||
+        (taskRef.current && eventPath.includes(taskRef.current)) ||
+        clickedOwnedEditor
+      ) {
+        return;
+      }
+      cancelDraftRef.current();
+    }
+
+    // The listener starts on the next event cycle so the click that created
+    // this row cannot bubble into it and cancel its own draft.
+    const activationTimer = window.setTimeout(() => {
+      document.addEventListener("click", cancelUntouchedDraftOnOutsideClick);
+    }, 0);
+    return () => {
+      window.clearTimeout(activationTimer);
+      document.removeEventListener(
+        "click",
+        cancelUntouchedDraftOnOutsideClick,
+      );
+    };
+  }, [newTaskDraft, task.id]);
+
+  function finishChangedDraft() {
+    if (!newTaskDraft || draftChangedRef.current) return;
+    draftChangedRef.current = true;
+    onNewTaskDraftFinished();
+  }
+
+  function saveTitle(finishBlankDraft = true) {
     const title = titleDraft.trim();
+    const titleChanged = title !== task.title;
     updateTask(task.id, { title });
-    if (newTaskDraft) onNewTaskDraftFinished();
+    if (newTaskDraft && (finishBlankDraft || titleChanged)) {
+      finishChangedDraft();
+    }
     setEditingTitle(false);
   }
 
   function saveTitleOnBlur() {
-    if (newTaskDraft && !titleDraft.trim()) {
-      onNewTaskDraftCanceled();
-      return;
-    }
-    saveTitle();
+    saveTitle(false);
   }
 
   function cancelTitle() {
@@ -178,6 +227,7 @@ export function TaskRow({
 
   function changeStatus(status: TaskStatus | null) {
     if (!status) return;
+    if (status !== task.status) finishChangedDraft();
     if (status === "done" && !isArchivedStatus(task.status)) {
       onDoneRequested();
       return;
@@ -208,6 +258,7 @@ export function TaskRow({
       return;
     }
     setSelectedId(task.id);
+    requestUiSound(expanded ? "close" : "open");
     setExpandedId(expanded ? null : task.id);
   }
 
@@ -233,12 +284,15 @@ export function TaskRow({
     if (event.key === "Enter" && event.target === event.currentTarget) {
       event.preventDefault();
       event.stopPropagation();
+      requestUiSound(expanded ? "close" : "open");
       setExpandedId(expanded ? null : task.id);
     }
   }
 
   function saveDescription() {
-    updateTask(task.id, { description: descriptionDraft.trim() });
+    const description = descriptionDraft.trim();
+    if (description !== task.description) finishChangedDraft();
+    updateTask(task.id, { description });
     setExpandedId(null);
   }
 
@@ -261,6 +315,7 @@ export function TaskRow({
         selected && "is-selected",
         isDragging && "is-dragging",
       )}
+      data-ui-hover-sound
       tabIndex={0}
       aria-label={`${displayTitle}, ${STATUS_LABELS[displayStatus]}`}
       onFocus={() => setSelectedId(task.id)}
@@ -286,7 +341,9 @@ export function TaskRow({
             value={`${task.priority}`}
             onValueChange={(value) => {
               if (value === null) return;
-              updateTask(task.id, { priority: Number(value) as Priority });
+              const priority = Number(value) as Priority;
+              if (priority !== task.priority) finishChangedDraft();
+              updateTask(task.id, { priority });
             }}
           >
             <SelectTrigger
@@ -298,7 +355,7 @@ export function TaskRow({
             >
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent data-task-editor-for={task.id}>
               <SelectItem value="0">0</SelectItem>
               <SelectItem value="1">1</SelectItem>
               <SelectItem value="2">2</SelectItem>
@@ -346,7 +403,10 @@ export function TaskRow({
             >
               <SelectValue>{STATUS_LABELS[displayStatus]}</SelectValue>
             </SelectTrigger>
-            <SelectContent className="status-options">
+            <SelectContent
+              className="status-options"
+              data-task-editor-for={task.id}
+            >
               {STATUSES.map((status) => (
                 <SelectItem
                   key={status}
@@ -362,15 +422,26 @@ export function TaskRow({
 
         <div className="estimate-cell" data-label="Estimate">
           <EstimateEditor
+            ownerId={task.id}
             value={task.estimate}
-            onChange={(estimate) => updateTask(task.id, { estimate })}
+            onChange={(estimate) => {
+              const estimateChanged =
+                estimate?.amount !== task.estimate?.amount ||
+                estimate?.unit !== task.estimate?.unit;
+              if (estimateChanged) finishChangedDraft();
+              updateTask(task.id, { estimate });
+            }}
           />
         </div>
 
         <div className="due-cell" data-label="Due">
           <DueDateEditor
+            ownerId={task.id}
             value={task.dueOn}
-            onChange={(dueOn) => updateTask(task.id, { dueOn })}
+            onChange={(dueOn) => {
+              if (dueOn !== task.dueOn) finishChangedDraft();
+              updateTask(task.id, { dueOn });
+            }}
           />
         </div>
 
@@ -456,6 +527,7 @@ export function TaskRow({
             <Button
               variant="ghost"
               size="sm"
+              data-ui-sound="close"
               onClick={() => {
                 setDescriptionDraft(task.description);
                 setExpandedId(null);

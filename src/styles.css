@@ -42,6 +42,32 @@
   box-sizing: border-box;
 }
 
+/* Keep native page and popover scrollbars narrow while preserving a visible thumb. */
+html {
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
 html {
   min-width: 320px;
   min-height: 100%;
@@ -91,6 +117,9 @@ button svg {
 }
 
 .workspace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   min-height: 29px;
   margin-bottom: 12px;
 }
@@ -100,6 +129,32 @@ button svg {
   font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.04em;
+}
+
+.sound-toggle {
+  display: grid;
+  width: 29px;
+  height: 29px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.38);
+  background: transparent;
+  transition:
+    color 140ms ease,
+    background 140ms ease;
+}
+
+.sound-toggle:hover,
+.sound-toggle:focus-visible {
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.05);
+  outline: none;
+}
+
+.sound-toggle svg {
+  width: 14px;
+  height: 14px;
 }
 
 .tab-actions {

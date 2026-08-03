@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { requestUiSound } from "@/hooks/use-ui-sounds";
 import {
   ESTIMATE_BOUNDS,
   ESTIMATE_UNITS,
@@ -22,11 +23,16 @@ import {
 import type { Estimate, EstimateUnit } from "@/types";
 
 type EstimateEditorProps = {
+  ownerId: string;
   value: Estimate | null;
   onChange: (value: Estimate | null) => void;
 };
 
-export function EstimateEditor({ value, onChange }: EstimateEditorProps) {
+export function EstimateEditor({
+  ownerId,
+  value,
+  onChange,
+}: EstimateEditorProps) {
   const [open, setOpen] = useState(false);
   const [unit, setUnit] = useState<EstimateUnit>(value?.unit ?? "days");
   const [amount, setAmount] = useState(`${value?.amount ?? 1}`);
@@ -63,6 +69,8 @@ export function EstimateEditor({ value, onChange }: EstimateEditorProps) {
       const normalized = normalizeEstimateAmount(current, unit);
       const [min, max] = ESTIMATE_BOUNDS[unit];
       const next = Math.min(max, Math.max(min, normalized + delta));
+      if (next === normalized) return `${next}`;
+      requestUiSound(delta > 0 ? "open" : "close");
       onChange({ amount: next, unit });
       return `${next}`;
     });
@@ -90,12 +98,16 @@ export function EstimateEditor({ value, onChange }: EstimateEditorProps) {
       >
         {value ? formatEstimate(value) : "—"}
       </PopoverTrigger>
-      <PopoverContent className="estimate-popover">
+      <PopoverContent
+        className="estimate-popover"
+        data-task-editor-for={ownerId}
+      >
         <div className="estimate-controls">
           <div className="stepper-buttons">
             <button
               type="button"
               aria-label="Increase estimate"
+              data-ui-sound="custom"
               onPointerDown={(event) => {
                 event.preventDefault();
                 startRepeating(1);
@@ -109,6 +121,7 @@ export function EstimateEditor({ value, onChange }: EstimateEditorProps) {
             <button
               type="button"
               aria-label="Decrease estimate"
+              data-ui-sound="custom"
               onPointerDown={(event) => {
                 event.preventDefault();
                 startRepeating(-1);
@@ -147,7 +160,7 @@ export function EstimateEditor({ value, onChange }: EstimateEditorProps) {
             <SelectTrigger className="estimate-unit-trigger">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent data-task-editor-for={ownerId}>
               {ESTIMATE_UNITS.map((item) => (
                 <SelectItem key={item} value={item}>
                   {item}
@@ -165,6 +178,7 @@ export function EstimateEditor({ value, onChange }: EstimateEditorProps) {
               variant="ghost"
               size="sm"
               className="clear-property-button"
+              data-ui-sound="close"
               onClick={() => {
                 onChange(null);
                 setOpen(false);

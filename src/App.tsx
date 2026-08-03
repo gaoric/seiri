@@ -22,6 +22,8 @@ import {
   CircleHelp,
   ListTodo,
   Plus,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import {
   AnimatePresence,
@@ -52,6 +54,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useUiSounds } from "@/hooks/use-ui-sounds";
 import {
   formatEstimate,
   isArchivedStatus,
@@ -242,6 +245,15 @@ function isTypingTarget(target: EventTarget | null) {
 export function App() {
   const [animationScope, animate] = useAnimate<HTMLElement>();
   const prefersReducedMotion = useReducedMotion();
+  const {
+    playConfirmation,
+    playHologramOff,
+    playHologramOn,
+    playNewTaskDrop,
+    playVhsShutdown,
+    soundEnabled,
+    toggleSound,
+  } = useUiSounds();
   const tasks = useTaskStore((state) => state.tasks);
   const activeOrder = useTaskStore((state) => state.activeOrder);
   const archiveOrder = useTaskStore((state) => state.archiveOrder);
@@ -298,6 +310,7 @@ export function App() {
   const createTask = useCallback(() => {
     if (creationAnimation) return;
 
+    playNewTaskDrop();
     const buttonRect = newTaskButtonRef.current?.getBoundingClientRect();
     const listRect = taskListRef.current?.getBoundingClientRect();
     const orbDistance = buttonRect && listRect
@@ -311,7 +324,7 @@ export function App() {
     setNewTaskDraftId(id);
     setEditingTitleId(id);
     setCreationAnimation({ taskId: id, orbDistance });
-  }, [addTask, creationAnimation]);
+  }, [addTask, creationAnimation, playNewTaskDrop]);
 
   const requestKill = useCallback(
     (id: string) => {
@@ -419,17 +432,24 @@ export function App() {
     const selector = completing
       ? ".task-life-cycle.is-completing"
       : ".task-life-cycle.is-killing";
+    playHologramOff();
+    const vhsSoundTimer = window.setTimeout(playVhsShutdown, 510);
     const controls = runVhsShutdown(animate, selector);
     controls.then(() => {
       if (completing) startCompletionTravel(id);
       else finishKill(id);
     });
-    return () => controls.stop();
+    return () => {
+      window.clearTimeout(vhsSoundTimer);
+      controls.stop();
+    };
   }, [
     animate,
     completionAnimation,
     finishKill,
     killingTaskId,
+    playHologramOff,
+    playVhsShutdown,
     startCompletionTravel,
   ]);
 
@@ -449,6 +469,7 @@ export function App() {
         x: animation.targetX,
         y: animation.targetY,
       });
+      playConfirmation();
       toast("Task completed", {
         action: {
           label: "Undo",
@@ -457,7 +478,7 @@ export function App() {
         },
       });
     },
-    [updateTask],
+    [playConfirmation, updateTask],
   );
 
   const finishDraftCancellation = useCallback(
@@ -478,6 +499,7 @@ export function App() {
     }
 
     const orbDistance = creationAnimation.orbDistance;
+    const hologramSoundTimer = window.setTimeout(playHologramOn, 620);
     const controls = animate([
       [
         ".new-task-button",
@@ -611,13 +633,20 @@ export function App() {
     });
     return () => {
       canceled = true;
+      window.clearTimeout(hologramSoundTimer);
       controls.stop();
       const button = newTaskButtonRef.current;
       button?.style.removeProperty("opacity");
       button?.style.removeProperty("clip-path");
       button?.style.removeProperty("filter");
     };
-  }, [animate, creationAnimation, prefersReducedMotion, setExpandedId]);
+  }, [
+    animate,
+    creationAnimation,
+    playHologramOn,
+    prefersReducedMotion,
+    setExpandedId,
+  ]);
 
   const clearSort = useCallback((targetTab: TaskTab) => {
     delete defaultOrders.current[targetTab];
@@ -714,6 +743,7 @@ export function App() {
   }
 
   function handleTabChange(value: TaskTab) {
+    if (value === tab) return;
     setTab(value);
   }
 
@@ -745,6 +775,17 @@ export function App() {
           >
             <header className="workspace-header">
               <h1>todo</h1>
+              <button
+                className="sound-toggle"
+                type="button"
+                data-ui-sound="custom"
+                aria-label={soundEnabled ? "Mute sounds" : "Enable sounds"}
+                aria-pressed={soundEnabled}
+                title={soundEnabled ? "Mute sounds" : "Enable sounds"}
+                onClick={toggleSound}
+              >
+                {soundEnabled ? <Volume2 /> : <VolumeX />}
+              </button>
             </header>
 
             <Tabs
@@ -753,7 +794,7 @@ export function App() {
             >
               <div className="tab-row">
                 <TabsList aria-label="Task views">
-                  <TabsTrigger value="active">
+                  <TabsTrigger value="active" data-ui-sound="open">
                     <ListTodo />
                     Active
                     <span>{activeOrder.length}</span>
@@ -761,6 +802,7 @@ export function App() {
                   <TabsTrigger
                     ref={archiveTabRef}
                     value="archive"
+                    data-ui-sound="open"
                     className={cn(
                       (completionAnimation || archiveTwinkle) &&
                         "is-absorbing",
@@ -808,6 +850,7 @@ export function App() {
                       ref={newTaskButtonRef}
                       size="sm"
                       className="new-task-button"
+                      data-ui-sound="custom"
                       onClick={createTask}
                       disabled={Boolean(creationAnimation)}
                     >
@@ -843,6 +886,9 @@ export function App() {
                     <button
                       key={key}
                       type="button"
+                      data-ui-sound={
+                        active && sort.direction === "desc" ? "close" : "open"
+                      }
                       className={active ? "is-sorted" : undefined}
                       aria-label={
                         nextDirection === "off"
@@ -1006,7 +1052,12 @@ export function App() {
                         : "The archive is empty."}
                     </p>
                     {tab === "active" && (
-                      <Button variant="subtle" size="sm" onClick={createTask}>
+                      <Button
+                        variant="subtle"
+                        size="sm"
+                        data-ui-sound="custom"
+                        onClick={createTask}
+                      >
                         <Plus />
                         Add a task
                       </Button>

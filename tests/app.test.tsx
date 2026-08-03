@@ -7,6 +7,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { App } from "@/App";
+import { UI_SOUND_EVENT } from "@/hooks/use-ui-sounds";
 import { useTaskStore } from "@/store/task-store";
 import type { Task } from "@/types";
 
@@ -39,6 +40,7 @@ describe("app interactions", () => {
       "data-active",
       "",
     );
+    expect(screen.getByRole("article")).toHaveAttribute("data-ui-hover-sound");
   });
 
   test("edits the title inline", () => {
@@ -60,6 +62,53 @@ describe("app interactions", () => {
     expect(useTaskStore.getState().tasks.one.description).toBe(
       "A better description",
     );
+  });
+
+  test("sounds task disclosure as open and close", () => {
+    const cues: string[] = [];
+    const recordCue = (event: Event) => {
+      cues.push((event as CustomEvent<string>).detail);
+    };
+    document.addEventListener(UI_SOUND_EVENT, recordCue);
+
+    render(<App />);
+    const article = screen.getByRole("article");
+    fireEvent.click(article);
+    fireEvent.click(article);
+
+    expect(cues).toEqual(["open", "close"]);
+    document.removeEventListener(UI_SOUND_EVENT, recordCue);
+  });
+
+  test("sounds every repeated estimate step in its direction", async () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "2 hours" }));
+
+    const cues: string[] = [];
+    const recordCue = (event: Event) => {
+      cues.push((event as CustomEvent<string>).detail);
+    };
+    document.addEventListener(UI_SOUND_EVENT, recordCue);
+
+    const amount = screen.getByLabelText("Estimate amount") as HTMLInputElement;
+    const initialAmount = Number(amount.value);
+    const increase = screen.getByLabelText("Increase estimate");
+    await act(async () => {
+      fireEvent.pointerDown(increase);
+      await new Promise((resolve) => setTimeout(resolve, 470));
+      fireEvent.pointerUp(increase);
+    });
+
+    const increasedBy = Number(amount.value) - initialAmount;
+    expect(increasedBy).toBeGreaterThan(1);
+    expect(cues).toEqual(Array.from({ length: increasedBy }, () => "open"));
+
+    cues.length = 0;
+    const decrease = screen.getByLabelText("Decrease estimate");
+    fireEvent.pointerDown(decrease);
+    fireEvent.pointerUp(decrease);
+    expect(cues).toEqual(["close"]);
+    document.removeEventListener(UI_SOUND_EVENT, recordCue);
   });
 
   test("archives via status and keeps permanent deletion out of Active", () => {
@@ -100,12 +149,14 @@ describe("app interactions", () => {
     expect(screen.getAllByRole("article")[0]).toHaveTextContent("Zebra task");
   });
 
-  test("fades out a new untitled task before discarding it", async () => {
+  test("fades out a new untouched task after clicking outside its row", async () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "New task" }));
-    const title = screen.getByLabelText("Task title");
     const createdId = useTaskStore.getState().activeOrder[0];
-    fireEvent.blur(title);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    fireEvent.click(document.body);
 
     expect(document.querySelector(".task-life-cycle.is-canceling"))
       .toBeInTheDocument();
@@ -113,6 +164,84 @@ describe("app interactions", () => {
       expect(useTaskStore.getState().activeOrder).toEqual(["one"]);
       expect(useTaskStore.getState().tasks[createdId]).toBeUndefined();
     });
+  });
+
+  test("does not treat the New task click as an outside click", async () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "New task" }));
+    const createdId = useTaskStore.getState().activeOrder[0];
+
+    expect(useTaskStore.getState().tasks[createdId]).toBeDefined();
+    expect(document.querySelector(".task-life-cycle.is-canceling"))
+      .not.toBeInTheDocument();
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(useTaskStore.getState().tasks[createdId]).toBeDefined();
+  });
+
+  test("keeps a blank new task while interacting with its fields", async () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "New task" }));
+    const createdId = useTaskStore.getState().activeOrder[0];
+    const row = document.querySelector(`[data-task-id="${createdId}"]`)!;
+    fireEvent.blur(screen.getByLabelText("Task title"));
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    await act(async () => {
+      fireEvent.click(
+        row.querySelector('[role="combobox"][aria-label="Priority"]')!,
+      );
+      await Promise.resolve();
+    });
+    expect(useTaskStore.getState().tasks[createdId]).toBeDefined();
+    fireEvent.click(row.querySelector(".title-button")!);
+    expect(screen.getByLabelText("Task title")).toBeInTheDocument();
+    expect(useTaskStore.getState().tasks[createdId]).toBeDefined();
+
+    fireEvent.click(document.body);
+    await waitFor(() => {
+      expect(useTaskStore.getState().tasks[createdId]).toBeUndefined();
+    });
+  });
+
+  test("keeps a blank new task after a non-title field changes", async () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "New task" }));
+    const createdId = useTaskStore.getState().activeOrder[0];
+    const row = document.querySelector(`[data-task-id="${createdId}"]`)!;
+    fireEvent.blur(screen.getByLabelText("Task title"));
+
+    await act(async () => {
+      fireEvent.click(row.querySelector(".estimate-trigger")!);
+      await Promise.resolve();
+    });
+    const amount = screen.getByLabelText("Estimate amount");
+    fireEvent.change(amount, { target: { value: "2" } });
+    fireEvent.blur(amount);
+    fireEvent.click(document.body);
+
+    expect(useTaskStore.getState().tasks[createdId]).toBeDefined();
+    expect(useTaskStore.getState().tasks[createdId].estimate).toEqual({
+      amount: 2,
+      unit: "days",
+    });
+  });
+
+  test("toggles and remembers the sound preference", () => {
+    const firstRender = render(<App />);
+    const mute = screen.getByRole("button", { name: "Mute sounds" });
+    fireEvent.click(mute);
+    expect(localStorage.getItem("seiri.sounds.enabled")).toBe("false");
+    expect(screen.getByRole("button", { name: "Enable sounds" }))
+      .toHaveAttribute("aria-pressed", "false");
+
+    firstRender.unmount();
+    render(<App />);
+    expect(screen.getByRole("button", { name: "Enable sounds" }))
+      .toBeInTheDocument();
   });
 
   test("keeps an explicitly confirmed blank task", () => {

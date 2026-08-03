@@ -19,6 +19,26 @@ test("creates, edits, and persists a task", async ({ page }) => {
   await expect(page.getByText("Ship the Bun build")).toBeVisible();
 });
 
+test("keeps an untitled task after only its priority changes", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: "New task" }).click();
+  const newRow = page.getByRole("article").first();
+  const priority = newRow.getByRole("combobox", { name: "Priority" });
+  await priority.click();
+  await page.getByRole("option", { name: "0", exact: true }).click();
+  await expect(priority).toContainText("0");
+
+  await page.getByText("Stored on this device").click();
+  await expect(newRow).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole("article").first().getByRole("combobox", {
+      name: "Priority",
+    }),
+  ).toContainText("0");
+});
+
 test("materializes and expands a new task through the light orb sequence", async ({
   page,
 }) => {
@@ -346,7 +366,8 @@ test("cancels abandoned drafts and keeps confirmed blank tasks", async ({
 
   await page.keyboard.press("n");
   const titleInput = page.getByLabel("Task title");
-  await titleInput.blur();
+  await expect(titleInput).toBeVisible();
+  await page.getByText("Stored on this device").click();
 
   await expect(page.locator(".task-life-cycle.is-canceling")).toHaveCount(1);
   await expect(page.getByRole("article")).toHaveCount(3);
