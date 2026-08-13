@@ -182,7 +182,15 @@ function offsetDate(days: number) {
   return dateToKey(date);
 }
 
-export function seedTasks(): {
+export function emptyTaskState(): {
+  tasks: Record<string, Task>;
+  activeOrder: string[];
+  archiveOrder: string[];
+} {
+  return { tasks: {}, activeOrder: [], archiveOrder: [] };
+}
+
+export function demoTasks(): {
   tasks: Record<string, Task>;
   activeOrder: string[];
   archiveOrder: string[];
@@ -190,47 +198,122 @@ export function seedTasks(): {
   const now = new Date().toISOString();
   const list: Task[] = [
     {
-      id: "welcome",
+      id: "demo-inline-editing",
       priority: 0,
-      title: "Shape the first version",
+      title: "Click any field to edit it inline",
       status: "in-progress",
-      estimate: { amount: 2, unit: "days" },
+      estimate: { amount: 20, unit: "minutes" },
+      dueOn: offsetDate(1),
+      description:
+        "Priority, title, status, estimate, and due date can all be changed directly from the row.",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "demo-description",
+      priority: 1,
+      title: "Click the row background to open this note",
+      status: "not-started",
+      estimate: { amount: 1, unit: "hours" },
+      dueOn: offsetDate(3),
+      description:
+        "Descriptions expand beneath a task. Click away to save and collapse, or use Ctrl/Cmd + Enter.",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "demo-drag",
+      priority: 1,
+      title: "Drag this row to reorder the list",
+      status: "not-started",
+      estimate: { amount: 10, unit: "minutes" },
+      dueOn: null,
+      description:
+        "Grab the row outside its property fields. Nearby tasks move aside to show the drop position.",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "demo-shortcuts",
+      priority: 0,
+      title: "Try J, K, Enter, E, and Shift + arrows",
+      status: "in-progress",
+      estimate: { amount: 30, unit: "minutes" },
       dueOn: offsetDate(2),
       description:
-        "Keep the first version quiet, useful, and intentionally small.",
+        "J/K navigate, Enter opens the description, E edits the title, and Shift + Up/Down reorders.",
       createdAt: now,
       updatedAt: now,
     },
     {
-      id: "shortcuts",
-      priority: 1,
-      title: "Try the keyboard shortcuts",
-      status: "not-started",
-      estimate: { amount: 45, unit: "minutes" },
-      dueOn: offsetDate(5),
-      description: "Press J or K to move, then Enter to open a task.",
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: "mobile",
+      id: "demo-sort",
       priority: 2,
-      title: "Check the mobile layout",
+      title: "Click a column heading to cycle its sort",
+      status: "on-hold",
+      estimate: { amount: 2, unit: "weeks" },
+      dueOn: offsetDate(14),
+      description:
+        "Each heading cycles ascending, descending, then back to your manual order.",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "demo-due",
+      priority: 2,
+      title: "Hover this due date to reveal the exact date",
       status: "on-hold",
       estimate: { amount: 3, unit: "hours" },
       dueOn: offsetDate(-1),
-      description: "Resize the window and make sure every control stays usable.",
+      description:
+        "Overdue dates turn red. Due dates are chosen from the calendar and stored as local calendar days.",
       createdAt: now,
       updatedAt: now,
     },
     {
-      id: "archive-demo",
+      id: "demo-new-task",
       priority: 1,
-      title: "Archive a completed task",
+      title: "Press N or use New task to create a hologram",
+      status: "not-started",
+      estimate: null,
+      dueOn: null,
+      description:
+        "New tasks appear at the top. An untouched blank draft disappears only when you click away.",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "demo-complete",
+      priority: 1,
+      title: "Set this task to Done to watch it archive",
+      status: "not-started",
+      estimate: { amount: 5, unit: "minutes" },
+      dueOn: offsetDate(4),
+      description:
+        "Done tasks collapse into light and travel to Archive. Kill uses the VHS shutdown without the trip.",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "demo-archive-restore",
+      priority: 1,
+      title: "Restore archived tasks whenever you need them",
       status: "done",
       estimate: { amount: 1, unit: "hours" },
       dueOn: offsetDate(-3),
-      description: "Archived tasks can still be edited, restored, or deleted.",
+      description:
+        "Archived tasks remain editable. Restore returns a task to Active with Not started status.",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "demo-archive-delete",
+      priority: 2,
+      title: "Permanent delete lives only in Archive",
+      status: "kill",
+      estimate: null,
+      dueOn: offsetDate(-7),
+      description:
+        "Active tasks cannot be permanently deleted. Archive adds a guarded delete action.",
       createdAt: now,
       updatedAt: now,
     },
@@ -238,7 +321,16 @@ export function seedTasks(): {
 
   return {
     tasks: Object.fromEntries(list.map((task) => [task.id, task])),
-    activeOrder: ["welcome", "shortcuts", "mobile"],
-    archiveOrder: ["archive-demo"],
+    activeOrder: [
+      "demo-inline-editing",
+      "demo-description",
+      "demo-drag",
+      "demo-shortcuts",
+      "demo-sort",
+      "demo-due",
+      "demo-new-task",
+      "demo-complete",
+    ],
+    archiveOrder: ["demo-archive-restore", "demo-archive-delete"],
   };
 }

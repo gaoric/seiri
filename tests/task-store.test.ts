@@ -96,4 +96,22 @@ describe("task store", () => {
       addedId,
     ]);
   });
+
+  test("keeps demo changes ephemeral and restores the real workspace", () => {
+    useTaskStore.getState().setDemoMode(true);
+    expect(useTaskStore.getState().isDemoMode).toBeTrue();
+    expect(useTaskStore.getState().activeOrder.length).toBeGreaterThanOrEqual(7);
+    expect(useTaskStore.getState().archiveOrder.length).toBeGreaterThanOrEqual(2);
+
+    const demoId = useTaskStore.getState().activeOrder[0];
+    useTaskStore.getState().updateTask(demoId, { title: "Changed in demo" });
+    const stored = JSON.parse(localStorage.getItem("seiri.tasks.v1")!);
+    expect(stored.state.activeOrder).toEqual(["active", "other"]);
+    expect(stored.state.tasks[demoId]).toBeUndefined();
+
+    useTaskStore.getState().setDemoMode(false);
+    expect(useTaskStore.getState().isDemoMode).toBeFalse();
+    expect(useTaskStore.getState().activeOrder).toEqual(["active", "other"]);
+    expect(useTaskStore.getState().archiveOrder).toEqual(["archived"]);
+  });
 });

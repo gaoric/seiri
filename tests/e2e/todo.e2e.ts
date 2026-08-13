@@ -1,7 +1,42 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
+});
+
+async function enterDemoMode(page: Page) {
+  await page.getByRole("button", { name: "Enter demo mode" }).click();
+  await expect(page.getByText("Click any field to edit it inline"))
+    .toBeVisible();
+}
+
+test("demo mode is guided, ephemeral, and preserves real tasks", async ({
+  page,
+}) => {
+  await expect(page.getByRole("article")).toHaveCount(0);
+  const demoToggle = page.getByRole("button", { name: "Enter demo mode" });
+  await expect(demoToggle).toBeVisible();
+
+  await demoToggle.click();
+  await expect(page.getByRole("article")).toHaveCount(8);
+  await expect(page.getByText("Click any field to edit it inline"))
+    .toBeVisible();
+  await page.getByRole("tab", { name: /Archive/ }).click();
+  await expect(page.getByRole("article")).toHaveCount(2);
+  await expect(page.getByText("Permanent delete lives only in Archive"))
+    .toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("article")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Enter demo mode" }))
+    .toBeVisible();
+
+  await page.keyboard.press("n");
+  await page.getByLabel("Task title").fill("My real task");
+  await page.getByLabel("Task title").press("Enter");
+  await page.getByRole("button", { name: "Enter demo mode" }).click();
+  await page.getByRole("button", { name: "Exit demo mode" }).click();
+  await expect(page.getByText("My real task")).toBeVisible();
 });
 
 test("creates, edits, and persists a task", async ({ page }) => {
@@ -22,7 +57,7 @@ test("creates, edits, and persists a task", async ({ page }) => {
 test("keeps an untitled task after only its priority changes", async ({
   page,
 }) => {
-  await page.getByRole("button", { name: "New task" }).click();
+  await page.getByRole("button", { name: "New task", exact: true }).click();
   const newRow = page.getByRole("article").first();
   const priority = newRow.getByRole("combobox", { name: "Priority" });
   await priority.click();
@@ -42,7 +77,8 @@ test("keeps an untitled task after only its priority changes", async ({
 test("materializes and expands a new task through the light orb sequence", async ({
   page,
 }) => {
-  const button = page.getByRole("button", { name: "New task" });
+  await enterDemoMode(page);
+  const button = page.getByRole("button", { name: "New task", exact: true });
   const previousFirstRow = page.getByRole("article").first();
   const previousY = (await previousFirstRow.boundingBox())?.y;
 
@@ -97,14 +133,16 @@ test("materializes and expands a new task through the light orb sequence", async
 });
 
 test("opens the description and archive view", async ({ page }) => {
+  await enterDemoMode(page);
   const row = page.getByRole("article").first();
   await row.focus();
   await row.press("Enter");
   await expect(page.getByLabel("Task description")).toBeVisible();
   await page.getByRole("tab", { name: /Archive/ }).click();
-  await expect(page.getByText("Archive a completed task")).toBeVisible();
+  await expect(page.getByText("Restore archived tasks whenever you need them"))
+    .toBeVisible();
   await expect(
-    page.getByRole("button", { name: /Restore Archive a completed task/ }),
+    page.getByRole("button", { name: /Restore Restore archived tasks/ }),
   ).toBeVisible();
 });
 
@@ -119,19 +157,20 @@ test("reflows without horizontal overflow", async ({ page }) => {
 test("clamps estimates and supports press-and-hold stepping", async ({
   page,
 }) => {
+  await enterDemoMode(page);
   const rows = page.getByRole("article");
-  await expect(rows).toHaveCount(3);
+  await expect(rows).toHaveCount(8);
   const firstRow = rows.nth(0);
   await firstRow.locator(".estimate-trigger").click();
 
   const amount = page.getByLabel("Estimate amount");
   await amount.fill("72");
   await amount.press("Enter");
-  await expect(firstRow.locator(".estimate-trigger")).toContainText("7 days");
+  await expect(firstRow.locator(".estimate-trigger")).toContainText("60 minutes");
 
   await amount.fill("1");
   await amount.press("Enter");
-  await expect(firstRow.locator(".estimate-trigger")).toContainText("1 day");
+  await expect(firstRow.locator(".estimate-trigger")).toContainText("1 minute");
   const increase = page.getByLabel("Increase estimate");
   await increase.dispatchEvent("pointerdown");
   await page.waitForTimeout(470);
@@ -140,15 +179,17 @@ test("clamps estimates and supports press-and-hold stepping", async ({
 });
 
 test("reorders tasks with the keyboard shortcut", async ({ page }) => {
+  await enterDemoMode(page);
   const rows = page.getByRole("article");
   await rows.nth(0).focus();
   await rows.nth(0).press("Shift+ArrowDown");
-  await expect(rows.nth(1)).toContainText("Shape the first version");
+  await expect(rows.nth(1)).toContainText("Click any field to edit it inline");
 });
 
 test("powers off a killed task through the VHS collapse", async ({
   page,
 }) => {
+  await enterDemoMode(page);
   const rows = page.getByRole("article");
   const firstRow = rows.first();
   const cardBox = await firstRow.boundingBox();
@@ -162,7 +203,7 @@ test("powers off a killed task through the VHS collapse", async ({
   await expect(killingRow).toHaveCount(1);
   await expect(hologram).toHaveCount(1);
   await expect(flash).toHaveCount(1);
-  await expect(rows).toHaveCount(3);
+  await expect(rows).toHaveCount(8);
 
   expect(cardBox).not.toBeNull();
   await expect.poll(
@@ -176,7 +217,7 @@ test("powers off a killed task through the VHS collapse", async ({
     },
     { intervals: [16], timeout: 2_000 },
   ).toBe(true);
-  await expect(rows).toHaveCount(3);
+  await expect(rows).toHaveCount(8);
   await expect(hologram).toHaveCSS("opacity", "0");
 
   await expect.poll(
@@ -187,15 +228,16 @@ test("powers off a killed task through the VHS collapse", async ({
     { intervals: [16], timeout: 1_000 },
   ).toBe(true);
 
-  await expect(rows).toHaveCount(2);
+  await expect(rows).toHaveCount(7);
   await expect(page.locator(".task-complete-light-orb")).toHaveCount(0);
   await page.getByRole("tab", { name: /Archive/ }).click();
-  await expect(page.getByText("Shape the first version")).toBeVisible();
+  await expect(page.getByText("Click any field to edit it inline")).toBeVisible();
 });
 
 test("absorbs a completed task into Archive as a circular light orb", async ({
   page,
 }) => {
+  await enterDemoMode(page);
   const rows = page.getByRole("article");
   const firstRow = rows.first();
   await firstRow.getByRole("combobox", { name: "Status" }).click();
@@ -208,7 +250,7 @@ test("absorbs a completed task into Archive as a circular light orb", async ({
     completingRow.locator(".task-transition-hologram"),
   ).toHaveCount(1);
   await expect(completingRow.locator(".task-vhs-flash")).toHaveCount(1);
-  await expect(rows).toHaveCount(3);
+  await expect(rows).toHaveCount(8);
 
   const orb = page.locator(".task-complete-light-orb");
   await expect(orb).toHaveCount(1, { timeout: 2_000 });
@@ -231,12 +273,13 @@ test("absorbs a completed task into Archive as a circular light orb", async ({
 
   await expect(orb).toHaveCount(0, { timeout: 1_600 });
   await expect(page.locator(".archive-twinkle")).toHaveCount(1);
-  await expect(rows).toHaveCount(2);
+  await expect(rows).toHaveCount(7);
   await page.getByRole("tab", { name: /Archive/ }).click();
-  await expect(page.getByText("Shape the first version")).toBeVisible();
+  await expect(page.getByText("Click any field to edit it inline")).toBeVisible();
 });
 
 test("uses Base UI selects, tooltip, and archive dialog", async ({ page }) => {
+  await enterDemoMode(page);
   const firstRow = page.getByRole("article").first();
   const priority = firstRow.getByRole("combobox", { name: "Priority" });
   await priority.click();
@@ -283,7 +326,7 @@ test("uses Base UI selects, tooltip, and archive dialog", async ({ page }) => {
 
   await page.getByRole("tab", { name: /Archive/ }).click();
   const deleteButton = page.getByRole("button", {
-    name: "Delete Archive a completed task permanently",
+    name: "Delete Restore archived tasks whenever you need them permanently",
   });
   await deleteButton.click();
   await expect(page.getByRole("alertdialog")).toBeVisible();
@@ -295,7 +338,7 @@ test("uses Base UI selects, tooltip, and archive dialog", async ({ page }) => {
   await expect(page.getByRole("alertdialog")).toBeHidden();
   await expect(
     page.getByRole("button", {
-      name: "Archive a completed task",
+      name: "Restore archived tasks whenever you need them",
       exact: true,
     }),
   ).toBeHidden();
@@ -305,9 +348,13 @@ test("cancels abandoned drafts and keeps confirmed blank tasks", async ({
   page,
 }) => {
   await expect(page.getByText("seiri", { exact: false })).toHaveCount(0);
+  await enterDemoMode(page);
   const activeTabBox = await page.getByRole("tab", { name: /Active/ })
     .boundingBox();
-  const newTaskBox = await page.getByRole("button", { name: "New task" })
+  const newTaskBox = await page.getByRole("button", {
+    name: "New task",
+    exact: true,
+  })
     .boundingBox();
   expect(activeTabBox).not.toBeNull();
   expect(newTaskBox).not.toBeNull();
@@ -343,7 +390,10 @@ test("cancels abandoned drafts and keeps confirmed blank tasks", async ({
     "font-size",
     "12px",
   );
-  await expect(page.getByRole("button", { name: "New task" })).toHaveCSS(
+  await expect(page.getByRole("button", {
+    name: "New task",
+    exact: true,
+  })).toHaveCSS(
     "font-weight",
     "480",
   );
@@ -364,15 +414,28 @@ test("cancels abandoned drafts and keeps confirmed blank tasks", async ({
     }
   }
 
+  const demoRows = page.getByRole("article");
+  const shortEstimateWidth = await demoRows.nth(6).locator(".estimate-trigger")
+    .evaluate((element) => element.getBoundingClientRect().width);
+  const longEstimateWidth = await demoRows.nth(0).locator(".estimate-trigger")
+    .evaluate((element) => element.getBoundingClientRect().width);
+  expect(longEstimateWidth).toBeGreaterThan(shortEstimateWidth);
+
+  await page.getByRole("button", { name: "Exit demo mode" }).click();
+  await expect(page.getByRole("article")).toHaveCount(0);
+
   await page.keyboard.press("n");
   const titleInput = page.getByLabel("Task title");
   await expect(titleInput).toBeVisible();
-  await page.getByText("Stored on this device").click();
+  await page.getByRole("heading", { name: "todo" }).click();
 
   await expect(page.locator(".task-life-cycle.is-canceling")).toHaveCount(1);
-  await expect(page.getByRole("article")).toHaveCount(3);
+  await expect(page.getByRole("article")).toHaveCount(0);
   await expect(page.getByLabel("Task title")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "New task" })).toHaveCSS(
+  await expect(page.getByRole("button", {
+    name: "New task",
+    exact: true,
+  })).toHaveCSS(
     "opacity",
     "1",
   );
@@ -387,18 +450,15 @@ test("cancels abandoned drafts and keeps confirmed blank tasks", async ({
   await page.reload();
   await expect(blankTitle).toBeVisible();
 
-  const rows = page.getByRole("article");
-  const shortEstimateWidth = await rows.nth(0).locator(".estimate-trigger")
-    .evaluate((element) => element.getBoundingClientRect().width);
-  const longEstimateWidth = await rows.nth(1).locator(".estimate-trigger")
-    .evaluate((element) => element.getBoundingClientRect().width);
-  expect(longEstimateWidth).toBeGreaterThan(shortEstimateWidth);
+  await page.keyboard.press("n");
+  await page.getByLabel("Task title").fill("A much longer task title");
+  await page.getByLabel("Task title").press("Enter");
 
   const blankTitleWidth = await blankTitle.evaluate(
     (element) => element.getBoundingClientRect().width,
   );
-  const filledTitleWidth = await rows
-    .filter({ hasText: "Shape the first version" })
+  const filledTitleWidth = await page.getByRole("article")
+    .filter({ hasText: "A much longer task title" })
     .locator(".title-button")
     .evaluate((element) => element.getBoundingClientRect().width);
   expect(filledTitleWidth).toBeGreaterThan(blankTitleWidth);
@@ -407,6 +467,7 @@ test("cancels abandoned drafts and keeps confirmed blank tasks", async ({
 test("drags from the row surface while property controls stay isolated", async ({
   page,
 }) => {
+  await enterDemoMode(page);
   const rows = page.getByRole("article");
   const firstRow = rows.nth(0);
   const secondRow = rows.nth(1);
@@ -450,12 +511,15 @@ test("drags from the row surface while property controls stay isolated", async (
   ).toBe(true);
 
   await page.mouse.up();
-  await expect(rows.nth(1)).toContainText("Shape the first version");
+  await expect(rows.nth(1)).toContainText("Click any field to edit it inline");
 });
 
 test("expands cleanly and uses compact fixed-size description controls", async ({
   page,
 }) => {
+  await page.keyboard.press("n");
+  await page.getByLabel("Task title").fill("Expandable task");
+  await page.getByLabel("Task title").press("Enter");
   const row = page.getByRole("article").first();
   const main = row.locator(".task-main");
   const before = await main.boundingBox();
@@ -505,7 +569,10 @@ test("expands cleanly and uses compact fixed-size description controls", async (
 });
 
 test("limits overdue emphasis to the due text", async ({ page }) => {
-  const overdueDue = page.getByRole("article").nth(2).locator(".due-trigger");
+  await enterDemoMode(page);
+  const overdueDue = page.getByRole("article")
+    .filter({ hasText: "Hover this due date" })
+    .locator(".due-trigger");
   const highlight =
     (page.viewportSize()?.width ?? 0) <= 680
       ? overdueDue.locator(".due-exact")
@@ -526,6 +593,7 @@ test("limits overdue emphasis to the due text", async ({ page }) => {
 test("uses text clear actions in estimate and due popovers", async ({
   page,
 }) => {
+  await enterDemoMode(page);
   const firstRow = page.getByRole("article").first();
   await firstRow.locator(".estimate-trigger").click();
   const estimatePopover = page.locator(".estimate-popover");

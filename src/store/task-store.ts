@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
+  demoTasks,
+  emptyTaskState,
   isArchivedStatus,
   moveItem,
-  seedTasks,
   sortTaskIds,
   tabForStatus,
 } from "@/lib/task-utils";
@@ -22,6 +23,8 @@ type PersistedState = {
 };
 
 type TaskState = PersistedState & {
+  isDemoMode: boolean;
+  userStateBeforeDemo: PersistedState | null;
   selectedId: string | null;
   expandedId: string | null;
   addTask: () => string;
@@ -39,10 +42,17 @@ type TaskState = PersistedState & {
   restoreTaskOrder: (tab: TaskTab, order: string[]) => void;
   setSelectedId: (id: string | null) => void;
   setExpandedId: (id: string | null) => void;
+  setDemoMode: (enabled: boolean) => void;
   replaceStateForTests: (state: PersistedState) => void;
 };
 
-const initial = seedTasks();
+const initial = emptyTaskState();
+const LEGACY_SAMPLE_IDS = new Set([
+  "welcome",
+  "shortcuts",
+  "mobile",
+  "archive-demo",
+]);
 
 function newId() {
   return globalThis.crypto?.randomUUID?.() ?? `task-${Date.now()}`;
@@ -52,10 +62,36 @@ function removeFrom(items: string[], id: string) {
   return items.filter((item) => item !== id);
 }
 
+function persistedState(state: PersistedState): PersistedState {
+  return {
+    tasks: state.tasks,
+    activeOrder: state.activeOrder,
+    archiveOrder: state.archiveOrder,
+  };
+}
+
+function migratePersistedState(
+  persisted: unknown,
+  version: number,
+): PersistedState {
+  const state = persisted as Partial<PersistedState>;
+  const tasks = { ...(state.tasks ?? {}) };
+  if (version < 2) {
+    for (const id of LEGACY_SAMPLE_IDS) delete tasks[id];
+  }
+  return {
+    tasks,
+    activeOrder: (state.activeOrder ?? []).filter((id) => Boolean(tasks[id])),
+    archiveOrder: (state.archiveOrder ?? []).filter((id) => Boolean(tasks[id])),
+  };
+}
+
 export const useTaskStore = create<TaskState>()(
   persist(
     (set, get) => ({
       ...initial,
+      isDemoMode: false,
+      userStateBeforeDemo: null,
       selectedId: initial.activeOrder[0] ?? null,
       expandedId: null,
 
@@ -217,22 +253,50 @@ export const useTaskStore = create<TaskState>()(
       setSelectedId: (selectedId) => set({ selectedId }),
       setExpandedId: (expandedId) => set({ expandedId }),
 
+      setDemoMode: (enabled) => {
+        const state = get();
+        if (enabled === state.isDemoMode) return;
+
+        if (enabled) {
+          const demo = demoTasks();
+          set({
+            ...demo,
+            isDemoMode: true,
+            userStateBeforeDemo: persistedState(state),
+            selectedId: demo.activeOrder[0] ?? null,
+            expandedId: null,
+          });
+          return;
+        }
+
+        const userState = state.userStateBeforeDemo ?? emptyTaskState();
+        set({
+          ...userState,
+          isDemoMode: false,
+          userStateBeforeDemo: null,
+          selectedId:
+            userState.activeOrder[0] ?? userState.archiveOrder[0] ?? null,
+          expandedId: null,
+        });
+      },
+
       replaceStateForTests: (state) =>
         set({
           ...state,
+          isDemoMode: false,
+          userStateBeforeDemo: null,
           selectedId: state.activeOrder[0] ?? state.archiveOrder[0] ?? null,
           expandedId: null,
         }),
     }),
     {
       name: "seiri.tasks.v1",
-      version: 1,
-      partialize: (state): PersistedState => ({
-        tasks: state.tasks,
-        activeOrder: state.activeOrder,
-        archiveOrder: state.archiveOrder,
-      }),
-      migrate: (persisted) => persisted as TaskState,
+      version: 2,
+      partialize: (state): PersistedState =>
+        state.isDemoMode && state.userStateBeforeDemo
+          ? state.userStateBeforeDemo
+          : persistedState(state),
+      migrate: migratePersistedState,
     },
   ),
 );

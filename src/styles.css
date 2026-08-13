@@ -107,7 +107,7 @@ button svg {
 
 .app-shell {
   min-height: 100vh;
-  padding: 34px 20px 22px;
+  padding: 34px 20px 76px;
   overflow-x: hidden;
 }
 
@@ -1125,6 +1125,45 @@ footer {
   font-size: 11px;
 }
 
+/* Demo stays viewport-accessible even when a long task list is scrolled. */
+.demo-mode-toggle {
+  position: fixed;
+  z-index: 70;
+  right: 16px;
+  bottom: 14px;
+  display: inline-flex;
+  height: 31px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.48);
+  background: rgba(27, 28, 31, 0.9);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+  font-size: var(--task-field-font-size);
+  font-weight: var(--task-field-font-weight);
+  transition:
+    border-color 140ms ease,
+    color 140ms ease,
+    background 140ms ease;
+}
+
+.demo-mode-toggle:hover,
+.demo-mode-toggle:focus-visible,
+.demo-mode-toggle.is-active {
+  border-color: rgba(188, 221, 255, 0.22);
+  color: rgba(230, 244, 255, 0.9);
+  background: rgba(51, 67, 82, 0.88);
+  outline: none;
+}
+
+.demo-mode-toggle svg {
+  width: 13px;
+  height: 13px;
+}
+
 .dialog-overlay {
   position: fixed;
   z-index: 90;
@@ -1169,7 +1208,7 @@ footer {
 
 @media (max-width: 680px) {
   .app-shell {
-    padding: 22px 14px 18px;
+    padding: 22px 14px 72px;
   }
 
   .workspace-header {
@@ -1293,6 +1332,11 @@ footer {
 
   footer {
     margin-top: 24px;
+  }
+
+  .demo-mode-toggle {
+    right: 10px;
+    bottom: 10px;
   }
 }
 

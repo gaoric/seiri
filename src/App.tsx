@@ -22,6 +22,7 @@ import {
   CircleHelp,
   ListTodo,
   Plus,
+  Sparkles,
   Volume2,
   VolumeX,
 } from "lucide-react";
@@ -259,6 +260,7 @@ export function App() {
   const archiveOrder = useTaskStore((state) => state.archiveOrder);
   const selectedId = useTaskStore((state) => state.selectedId);
   const expandedId = useTaskStore((state) => state.expandedId);
+  const isDemoMode = useTaskStore((state) => state.isDemoMode);
   const addTask = useTaskStore((state) => state.addTask);
   const discardTaskDraft = useTaskStore((state) => state.discardTaskDraft);
   const updateTask = useTaskStore((state) => state.updateTask);
@@ -268,6 +270,7 @@ export function App() {
   const restoreTaskOrder = useTaskStore((state) => state.restoreTaskOrder);
   const setSelectedId = useTaskStore((state) => state.setSelectedId);
   const setExpandedId = useTaskStore((state) => state.setExpandedId);
+  const setDemoMode = useTaskStore((state) => state.setDemoMode);
   const [tab, setTab] = useState<TaskTab>("active");
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [newTaskDraftId, setNewTaskDraftId] = useState<string | null>(null);
@@ -764,6 +767,22 @@ export function App() {
     }));
   }
 
+  function handleDemoModeToggle() {
+    setDemoMode(!isDemoMode);
+    setTab("active");
+    setEditingTitleId(null);
+    setNewTaskDraftId(null);
+    setCreationAnimation(null);
+    setCancelingDraftId(null);
+    setKillingTaskId(null);
+    setCompletionAnimation(null);
+    setArchiveTwinkle(null);
+    setActiveDragId(null);
+    setSorts({ active: null, archive: null });
+    defaultOrders.current = {};
+    document.body.classList.remove("is-dragging-task");
+  }
+
   return (
     <MotionConfig reducedMotion="user">
       <TooltipProvider delay={350}>
@@ -1112,12 +1131,26 @@ export function App() {
             )}
 
             <footer>
-              <span>Stored on this device</span>
+              <span>
+                {isDemoMode
+                  ? "Demo changes reset on refresh"
+                  : "Stored on this device"}
+              </span>
               <span aria-hidden="true">·</span>
               <span>Made with simplicity in mind</span>
             </footer>
           </section>
         </main>
+        <button
+          className={cn("demo-mode-toggle", isDemoMode && "is-active")}
+          type="button"
+          aria-label={isDemoMode ? "Exit demo mode" : "Enter demo mode"}
+          aria-pressed={isDemoMode}
+          onClick={handleDemoModeToggle}
+        >
+          <Sparkles />
+          <span>{isDemoMode ? "Exit demo" : "Demo mode"}</span>
+        </button>
         <Toaster
           theme="dark"
           position="bottom-center"
