@@ -43,6 +43,25 @@ describe("app interactions", () => {
     expect(screen.getByRole("article")).toHaveAttribute("data-ui-hover-sound");
   });
 
+  test("offers compact create and demo actions in an empty workspace", () => {
+    useTaskStore.getState().replaceStateForTests({
+      tasks: {},
+      activeOrder: [],
+      archiveOrder: [],
+    });
+    render(<App />);
+
+    const addTask = screen.getByRole("button", { name: "Add a task" });
+    const tryDemo = screen.getByRole("button", { name: "Try demo" });
+    expect(addTask).toHaveClass("empty-state-action");
+    expect(tryDemo).toHaveClass("empty-state-action");
+
+    fireEvent.click(tryDemo);
+    expect(useTaskStore.getState().isDemoMode).toBeTrue();
+    expect(screen.getByText("Click any field to edit it inline"))
+      .toBeInTheDocument();
+  });
+
   test("edits the title inline", () => {
     render(<App />);
     fireEvent.click(screen.getByText("A focused task"));

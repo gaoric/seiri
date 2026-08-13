@@ -1116,6 +1116,22 @@ body.is-dragging-task * {
   font-size: 13px;
 }
 
+.empty-state-actions {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+
+/* Keep both empty-state actions visually aligned with the compact New task control. */
+.empty-state-action {
+  font-size: var(--task-field-font-size);
+  font-weight: var(--task-field-font-weight);
+}
+
+.try-demo-button {
+  color: rgba(255, 255, 255, 0.42);
+}
+
 footer {
   display: flex;
   justify-content: center;

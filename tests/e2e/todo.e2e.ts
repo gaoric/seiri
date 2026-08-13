@@ -14,10 +14,19 @@ test("demo mode is guided, ephemeral, and preserves real tasks", async ({
   page,
 }) => {
   await expect(page.getByRole("article")).toHaveCount(0);
-  const demoToggle = page.getByRole("button", { name: "Enter demo mode" });
-  await expect(demoToggle).toBeVisible();
+  const addTask = page.getByRole("button", { name: "Add a task" });
+  const tryDemo = page.getByRole("button", { name: "Try demo" });
+  const newTask = page.getByRole("button", { name: "New task", exact: true });
+  await expect(addTask).toHaveCSS("font-size", "12px");
+  if ((page.viewportSize()?.width ?? 0) > 430) {
+    await expect(addTask).toHaveCSS(
+      "font-size",
+      await newTask.evaluate((element) => getComputedStyle(element).fontSize),
+    );
+  }
+  await expect(tryDemo).toBeVisible();
 
-  await demoToggle.click();
+  await tryDemo.click();
   await expect(page.getByRole("article")).toHaveCount(8);
   await expect(page.getByText("Click any field to edit it inline"))
     .toBeVisible();

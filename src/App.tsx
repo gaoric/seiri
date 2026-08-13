@@ -1071,15 +1071,27 @@ export function App() {
                         : "The archive is empty."}
                     </p>
                     {tab === "active" && (
-                      <Button
-                        variant="subtle"
-                        size="sm"
-                        data-ui-sound="custom"
-                        onClick={createTask}
-                      >
-                        <Plus />
-                        Add a task
-                      </Button>
+                      <div className="empty-state-actions">
+                        <Button
+                          variant="subtle"
+                          size="sm"
+                          className="empty-state-action"
+                          data-ui-sound="custom"
+                          onClick={createTask}
+                        >
+                          <Plus />
+                          Add a task
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="empty-state-action try-demo-button"
+                          onClick={handleDemoModeToggle}
+                        >
+                          <Sparkles />
+                          Try demo
+                        </Button>
+                      </div>
                     )}
                   </div>
                 )}
