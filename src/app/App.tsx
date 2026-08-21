@@ -1,5 +1,7 @@
 import { MotionConfig } from "motion/react";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { AppShell } from "@/app/AppShell";
 import { TodoTool } from "@/features/todo";
 import { useUiSounds } from "@/shared/sound";
@@ -27,6 +29,8 @@ export function App() {
             },
           }}
         />
+        <Analytics />
+        <SpeedInsights />
       </TooltipProvider>
     </MotionConfig>
   );
