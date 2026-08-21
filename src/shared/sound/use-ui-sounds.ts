@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { click002Sound } from "@/shared/sound/assets/click-002";
 import { click003Sound } from "@/shared/sound/assets/click-003";
-import { click005Sound } from "@/shared/sound/assets/click-005";
 import { confirmation002Sound } from "@/shared/sound/assets/confirmation-002";
 import { drop001Sound } from "@/shared/sound/assets/drop-001";
 import { forceField000Sound } from "@/shared/sound/assets/force-field-000";
@@ -24,7 +23,6 @@ const INTERACTIVE_SELECTOR = [
   '[role="button"]:not([aria-disabled="true"])',
   '[role="option"]:not([aria-disabled="true"])',
 ].join(",");
-const HOVER_SELECTOR = `${INTERACTIVE_SELECTOR},[data-ui-hover-sound]`;
 
 type ClickSound = "open" | "close" | "custom";
 export type UiSoundCue = Exclude<ClickSound, "custom">;
@@ -38,12 +36,6 @@ export function requestUiSound(cue: UiSoundCue) {
 function findInteractive(target: EventTarget | null) {
   return target instanceof Element
     ? target.closest<HTMLElement>(INTERACTIVE_SELECTOR)
-    : null;
-}
-
-function findHoverTarget(target: EventTarget | null) {
-  return target instanceof Element
-    ? target.closest<HTMLElement>(HOVER_SELECTOR)
     : null;
 }
 
@@ -61,7 +53,7 @@ export function getClickSound(element: HTMLElement): ClickSound {
 
 /**
  * Preloads SoundCN effects, provides animation cues, and delegates the common
- * hover/click feedback so portaled controls receive the same sound treatment.
+ * click feedback so portaled controls receive the same sound treatment.
  */
 export function useUiSounds() {
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -69,10 +61,6 @@ export function useUiSounds() {
     return window.localStorage.getItem(SOUND_ENABLED_STORAGE_KEY) !== "false";
   });
   const playbackOptions = { ...SOUND_PLAYBACK_OPTIONS, soundEnabled };
-  const [playHover] = useSound(click005Sound, {
-    ...playbackOptions,
-    volume: MASTER_SOUND_VOLUME * 0.5,
-  });
   const [playOpen] = useSound(click003Sound, playbackOptions);
   const [playClose] = useSound(click002Sound, playbackOptions);
   const [playHologramOn] = useSound(
@@ -107,15 +95,6 @@ export function useUiSounds() {
   useEffect(() => {
     const pendingClickSounds = new WeakMap<HTMLElement, ClickSound>();
 
-    function handlePointerOver(event: PointerEvent) {
-      const hoverTarget = findHoverTarget(event.target);
-      if (!hoverTarget) return;
-
-      const previous = event.relatedTarget;
-      if (previous instanceof Node && hoverTarget.contains(previous)) return;
-      playHover();
-    }
-
     function handlePointerDown(event: PointerEvent) {
       const interactive = findInteractive(event.target);
       if (interactive) {
@@ -140,18 +119,16 @@ export function useUiSounds() {
       if (cue === "close") playClose();
     }
 
-    document.addEventListener("pointerover", handlePointerOver);
     // Base UI may toggle on pointer-down, so remember the state before it runs.
     document.addEventListener("pointerdown", handlePointerDown, true);
     document.addEventListener("click", handleClick, true);
     document.addEventListener(UI_SOUND_EVENT, handleRequestedSound);
     return () => {
-      document.removeEventListener("pointerover", handlePointerOver);
       document.removeEventListener("pointerdown", handlePointerDown, true);
       document.removeEventListener("click", handleClick, true);
       document.removeEventListener(UI_SOUND_EVENT, handleRequestedSound);
     };
-  }, [playClose, playHover, playOpen]);
+  }, [playClose, playOpen]);
 
   return {
     playConfirmation,

@@ -315,7 +315,6 @@ export function TaskRow({
         selected && "is-selected",
         isDragging && "is-dragging",
       )}
-      data-ui-hover-sound
       tabIndex={0}
       aria-label={`${displayTitle}, ${STATUS_LABELS[displayStatus]}`}
       onFocus={() => setSelectedId(task.id)}

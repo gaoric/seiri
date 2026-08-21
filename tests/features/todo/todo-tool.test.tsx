@@ -40,7 +40,6 @@ describe("app interactions", () => {
       "data-active",
       "",
     );
-    expect(screen.getByRole("article")).toHaveAttribute("data-ui-hover-sound");
   });
 
   test("offers compact create and demo actions in an empty workspace", () => {
