@@ -1,0 +1,34 @@
+@font-face {
+  font-family: "Geist Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../../../node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../../../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2");
+}
+
+:root {
+  --task-field-font-size: 12px;
+  --task-field-font-weight: 480;
+  --task-title-font-size: 14px;
+  --vhs-light-color: #fff;
+  --vhs-light-shadow:
+    0 0 12px rgba(255, 255, 255, 0.95),
+    0 0 30px rgba(193, 229, 255, 0.66),
+    0 0 48px rgba(151, 211, 255, 0.34);
+  color-scheme: dark;
+  font-family:
+    "Geist Variable", "Inter Variable", ui-sans-serif, system-ui,
+    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #111214;
+  color: #f5f5f4;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}

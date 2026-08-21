@@ -1,0 +1,43 @@
+.app-shell {
+  min-height: 100vh;
+  padding: 34px 20px 76px;
+  overflow-x: hidden;
+}
+.workspace { width: min(840px, 100%); margin: 0 auto; }
+.workspace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 29px;
+  margin-bottom: 12px;
+}
+.workspace h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+.sound-toggle {
+  display: grid;
+  width: 29px;
+  height: 29px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.38);
+  background: transparent;
+  transition: color 140ms ease, background 140ms ease;
+}
+.sound-toggle:hover,
+.sound-toggle:focus-visible {
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.05);
+  outline: none;
+}
+.sound-toggle svg { width: 14px; height: 14px; }
+
+@media (max-width: 680px) {
+  .app-shell { padding: 22px 14px 72px; }
+  .workspace-header { margin-bottom: 10px; }
+  .workspace h1 { font-size: 22px; }
+}
