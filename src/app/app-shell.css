@@ -11,13 +11,50 @@
   min-height: 29px;
   margin-bottom: 12px;
 }
-.workspace h1 {
+.workspace-title-tabs {
+  display: flex;
+  min-height: 29px;
+  align-items: baseline;
+  gap: 13px;
+}
+
+.workspace-title-tabs h1 {
   margin: 0;
+}
+
+.workspace-title-tabs [role="tab"] {
+  border: 0;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.28);
+  background: transparent;
+  font-size: 17px;
+  font-weight: 620;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  outline: none;
+  transition:
+    color 140ms ease,
+    font-size 160ms ease;
+}
+
+.workspace-title-tabs [role="tab"]:hover,
+.workspace-title-tabs [role="tab"]:focus-visible {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.workspace-title-tabs [role="tab"][data-active] {
+  color: #f5f5f4;
   font-size: 24px;
   font-weight: 700;
-  letter-spacing: -0.04em;
 }
-.sound-toggle {
+.workspace-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.sound-toggle,
+.pomodoro-settings-trigger {
   display: grid;
   width: 29px;
   height: 29px;
@@ -29,15 +66,19 @@
   transition: color 140ms ease, background 140ms ease;
 }
 .sound-toggle:hover,
-.sound-toggle:focus-visible {
+.sound-toggle:focus-visible,
+.pomodoro-settings-trigger:hover,
+.pomodoro-settings-trigger:focus-visible,
+.pomodoro-settings-trigger[aria-expanded="true"] {
   color: rgba(255, 255, 255, 0.78);
   background: rgba(255, 255, 255, 0.05);
   outline: none;
 }
-.sound-toggle svg { width: 14px; height: 14px; }
+.sound-toggle svg,
+.pomodoro-settings-trigger svg { width: 14px; height: 14px; }
 
 @media (max-width: 680px) {
   .app-shell { padding: 22px 14px 72px; }
   .workspace-header { margin-bottom: 10px; }
-  .workspace h1 { font-size: 22px; }
+  .workspace-title-tabs [role="tab"][data-active] { font-size: 22px; }
 }
