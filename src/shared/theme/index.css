@@ -2,5 +2,6 @@
 @import "./tokens.css";
 @import "./global.css";
 @import "../../app/app-shell.css";
+@import "../../features/habits/habits.css";
 @import "../../features/pomodoro/pomodoro.css";
 @import "../../features/todo/todo.css";

@@ -5,6 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Settings2 } from "lucide-react";
 import { useState } from "react";
 import { AppShell } from "@/app/AppShell";
+import { HabitsTool } from "@/features/habits";
 import { PomodoroTool } from "@/features/pomodoro";
 import { TodoTool } from "@/features/todo";
 import { useUiSounds } from "@/shared/sound";
@@ -60,6 +61,9 @@ export function App() {
                 <TabsTrigger value="pomodoro" data-ui-sound="open">
                   pomo
                 </TabsTrigger>
+                <TabsTrigger value="habits" data-ui-sound="open">
+                  habits
+                </TabsTrigger>
               </TabsList>
             }
           >
@@ -71,6 +75,9 @@ export function App() {
                 settingsOpen={pomodoroSettingsOpen}
                 onSettingsOpenChange={setPomodoroSettingsOpen}
               />
+            </TabsContent>
+            <TabsContent value="habits">
+              <HabitsTool />
             </TabsContent>
           </AppShell>
         </Tabs>

@@ -11,8 +11,9 @@ export function SelectValue(props: SelectPrimitive.Value.Props) {
 export function SelectTrigger({
   className,
   children,
+  showChevron = true,
   ...props
-}: SelectPrimitive.Trigger.Props) {
+}: SelectPrimitive.Trigger.Props & { showChevron?: boolean }) {
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
@@ -23,9 +24,9 @@ export function SelectTrigger({
       {...props}
     >
       {children}
-      <SelectPrimitive.Icon
+      {showChevron && <SelectPrimitive.Icon
         render={<ChevronDown className="size-3 opacity-50" />}
-      />
+      />}
     </SelectPrimitive.Trigger>
   );
 }
@@ -85,13 +86,15 @@ export function SelectContent({
 export function SelectItem({
   className,
   children,
+  indicator = "check",
   ...props
-}: SelectPrimitive.Item.Props) {
+}: SelectPrimitive.Item.Props & { indicator?: "check" | "line" }) {
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
         "relative flex h-8 cursor-default select-none items-center rounded-md py-1.5 pl-8 pr-2 text-xs text-white/75 outline-none focus:bg-white/8 focus:text-white data-highlighted:bg-white/8 data-highlighted:text-white",
+        indicator === "line" && "pl-5",
         className,
       )}
       {...props}
@@ -100,11 +103,14 @@ export function SelectItem({
         render={
           <span
             data-slot="select-item-indicator"
-            className="absolute left-2 flex size-4 items-center justify-center"
+            className={cn("absolute flex h-4 items-center justify-center",
+              indicator === "line" ? "left-1 w-2" : "left-2 w-4")}
           />
         }
       >
-        <Check className="size-3.5" />
+        {indicator === "line"
+          ? <span className="h-3 w-0.5 rounded-full bg-current" aria-hidden="true" />
+          : <Check className="size-3.5" />}
       </SelectPrimitive.ItemIndicator>
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
     </SelectPrimitive.Item>

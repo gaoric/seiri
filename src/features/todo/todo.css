@@ -841,7 +841,7 @@ body.is-dragging-task * {
 .status-option {
   width: max-content;
   height: 28px;
-  margin: 3px 3px 3px 27px;
+  margin: 3px 3px 3px 13px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 999px;
   padding: 0 10px;
@@ -849,7 +849,7 @@ body.is-dragging-task * {
 }
 
 .status-option [data-slot="select-item-indicator"] {
-  left: -23px;
+  left: -14px;
 }
 
 .status-option[data-highlighted] {

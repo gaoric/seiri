@@ -410,6 +410,7 @@ export function TaskRow({
                 <SelectItem
                   key={status}
                   value={status}
+                  indicator="line"
                   className={cn("status-option", `status-${status}`)}
                 >
                   {STATUS_LABELS[status]}
