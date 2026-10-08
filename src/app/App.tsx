@@ -74,6 +74,8 @@ export function App() {
               <PomodoroTool
                 settingsOpen={pomodoroSettingsOpen}
                 onSettingsOpenChange={setPomodoroSettingsOpen}
+                soundEnabled={sounds.soundEnabled}
+                isActive={activeTool === "pomodoro"}
               />
             </TabsContent>
             <TabsContent value="habits">

@@ -1,14 +1,14 @@
 export interface SoundAsset {
   /** Unique identifier for the sound */
   name: string;
-  /** Base64-encoded data URI (data:audio/mpeg;base64,...) */
+  /** Bundled asset URL or base64-encoded data URI */
   dataUri: string;
   /** Duration in seconds */
   duration: number;
   /** Audio format */
   format: "mp3" | "wav" | "ogg";
   /** License identifier */
-  license: "CC0" | "OGA-BY" | "MIT";
+  license: "CC0" | "OGA-BY" | "MIT" | "Mixkit";
   /** Original author/creator */
   author: string;
 }
@@ -26,6 +26,8 @@ export interface UseSoundOptions {
   cooldownMs?: number;
   /** If false, play() does nothing. Useful for user preferences. Default: true */
   soundEnabled?: boolean;
+  /** Match perceived loudness across assets using their decoded RMS level. Default: false */
+  normalizeVolume?: boolean;
   /** Called when playback starts */
   onPlay?: () => void;
   /** Called when playback ends naturally */
