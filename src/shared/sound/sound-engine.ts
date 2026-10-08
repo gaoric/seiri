@@ -8,20 +8,31 @@ export function getAudioContext(): AudioContext {
   return audioContext;
 }
 
-export async function decodeAudioData(dataUri: string): Promise<AudioBuffer> {
-  const cached = bufferCache.get(dataUri);
+export async function decodeAudioData(source: string): Promise<AudioBuffer> {
+  const cached = bufferCache.get(source);
   if (cached) return cached;
 
   const ctx = getAudioContext();
-  const base64 = dataUri.split(",")[1];
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
+  let bytes: ArrayBuffer;
+
+  if (source.startsWith("data:")) {
+    const base64 = source.split(",")[1];
+    const binaryString = atob(base64);
+    const decoded = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      decoded[i] = binaryString.charCodeAt(i);
+    }
+    bytes = decoded.buffer.slice(0);
+  } else {
+    const response = await fetch(source);
+    if (!response.ok) {
+      throw new Error(`Unable to load sound asset: ${response.status}`);
+    }
+    bytes = await response.arrayBuffer();
   }
 
-  const audioBuffer = await ctx.decodeAudioData(bytes.buffer.slice(0));
-  bufferCache.set(dataUri, audioBuffer);
+  const audioBuffer = await ctx.decodeAudioData(bytes);
+  bufferCache.set(source, audioBuffer);
   return audioBuffer;
 }
 
