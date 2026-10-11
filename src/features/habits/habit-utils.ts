@@ -1,18 +1,19 @@
-import type {
-  Habit,
-  HabitLogType,
-  HabitLogValue,
-  HabitLogs,
-} from "@/features/habits/habit-types";
+import type { Habit, HabitLogType, HabitLogValue, HabitLogs } from "@/features/habits/habit-types";
 
 export const HABIT_TRACKING_START = "2026-01-04";
 
 export function habitPeriodStarts(period: "week" | "month", today: Date) {
   const first = new Date(2026, 0, period === "week" ? 4 : 1);
-  const latest = period === "week" ? startOfHabitWeek(today)
-    : new Date(today.getFullYear(), today.getMonth(), 1);
+  const latest =
+    period === "week"
+      ? startOfHabitWeek(today)
+      : new Date(today.getFullYear(), today.getMonth(), 1);
   const starts: Date[] = [];
-  for (let date = first; date <= latest; date = period === "week" ? moveWeek(date, 1) : moveMonth(date, 1)) {
+  for (
+    let date = first;
+    date <= latest;
+    date = period === "week" ? moveWeek(date, 1) : moveMonth(date, 1)
+  ) {
     starts.push(date);
   }
   return starts.reverse();
@@ -72,10 +73,7 @@ export function formatWeekRange(days: Date[]) {
   return `${firstLabel}–${lastLabel}`;
 }
 
-export function isHabitLogComplete(
-  type: HabitLogType,
-  value: HabitLogValue | undefined,
-) {
+export function isHabitLogComplete(type: HabitLogType, value: HabitLogValue | undefined) {
   if (type === "checkbox") return value === true;
   if (type === "level" || type === "number") {
     return typeof value === "number" && value > 0;
@@ -83,11 +81,7 @@ export function isHabitLogComplete(
   return typeof value === "string" && value.trim().length > 0;
 }
 
-export function habitDayProgress(
-  habits: Habit[],
-  logs: HabitLogs,
-  dateKey: string,
-) {
+export function habitDayProgress(habits: Habit[], logs: HabitLogs, dateKey: string) {
   if (habits.length === 0) return 0;
   const dayLogs = logs[dateKey] ?? {};
   const completed = habits.reduce((total, habit) => {

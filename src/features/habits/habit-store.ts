@@ -2,11 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { MAX_HABITS } from "@/features/habits/habit-colors";
 import { HABIT_TRACKING_START } from "@/features/habits/habit-utils";
-import type {
-  Habit,
-  HabitLogValue,
-  HabitLogs,
-} from "@/features/habits/habit-types";
+import type { Habit, HabitLogValue, HabitLogs } from "@/features/habits/habit-types";
 
 type PersistedHabitState = {
   habits: Habit[];
@@ -14,8 +10,13 @@ type PersistedHabitState = {
 };
 
 type HabitState = PersistedHabitState & {
-  addHabit: (habit: Pick<Habit, "name" | "icon" | "logType" | "color">) => string | null;
-  updateHabit: (habitId: string, changes: Pick<Habit, "name" | "icon" | "logType" | "color">) => void;
+  addHabit: (
+    habit: Pick<Habit, "name" | "icon" | "logType" | "color" | "estimateMinutes">,
+  ) => string | null;
+  updateHabit: (
+    habitId: string,
+    changes: Pick<Habit, "name" | "icon" | "logType" | "color" | "estimateMinutes">,
+  ) => void;
   deleteHabit: (habitId: string) => void;
   reorderHabit: (habitId: string, overId: string) => void;
   setLog: (dateKey: string, habitId: string, value: HabitLogValue) => void;
@@ -32,7 +33,7 @@ export const useHabitStore = create<HabitState>()(
       habits: [],
       logs: {},
 
-      addHabit: ({ name, icon, logType, color }) => {
+      addHabit: ({ name, icon, logType, color, estimateMinutes = 0 }) => {
         if (get().habits.length >= MAX_HABITS) return null;
         const id = newHabitId();
         const habit: Habit = {
@@ -41,6 +42,7 @@ export const useHabitStore = create<HabitState>()(
           icon,
           logType,
           color,
+          estimateMinutes: Math.min(1440, Math.max(0, Math.round(estimateMinutes))),
           createdAt: new Date().toISOString(),
         };
         set((state) => ({ habits: [...state.habits, habit] }));
@@ -49,9 +51,23 @@ export const useHabitStore = create<HabitState>()(
 
       updateHabit: (habitId, changes) =>
         set((state) => ({
-          habits: state.habits.map((habit) => habit.id === habitId
-            ? { ...habit, ...changes, name: changes.name.trim() }
-            : habit),
+          habits: state.habits.map((habit) =>
+            habit.id === habitId
+              ? {
+                  ...habit,
+                  ...changes,
+                  name: changes.name.trim(),
+                  ...(changes.estimateMinutes !== undefined
+                    ? {
+                        estimateMinutes: Math.min(
+                          1440,
+                          Math.max(0, Math.round(changes.estimateMinutes)),
+                        ),
+                      }
+                    : {}),
+                }
+              : habit,
+          ),
         })),
 
       deleteHabit: (habitId) =>
@@ -95,7 +111,14 @@ export const useHabitStore = create<HabitState>()(
     }),
     {
       name: "seiri.habits.v1",
-      version: 1,
+      version: 2,
+      migrate: (persistedState) => {
+        const state = persistedState as PersistedHabitState;
+        return {
+          ...state,
+          habits: state.habits.map((habit) => ({ ...habit, estimateMinutes: 0 })),
+        };
+      },
       partialize: ({ habits, logs }): PersistedHabitState => ({ habits, logs }),
     },
   ),

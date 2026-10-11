@@ -5,16 +5,12 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Settings2 } from "lucide-react";
 import { useState } from "react";
 import { AppShell } from "@/app/AppShell";
+import { BlocksTool } from "@/features/blocks";
 import { HabitsTool } from "@/features/habits";
 import { PomodoroTool } from "@/features/pomodoro";
 import { TodoTool } from "@/features/todo";
 import { useUiSounds } from "@/shared/sound";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/shared/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 
 export function App() {
@@ -30,27 +26,25 @@ export function App() {
   return (
     <MotionConfig reducedMotion="user">
       <TooltipProvider delay={350}>
-        <Tabs
-          value={activeTool}
-          onValueChange={changeTool}
-          className="tool-tabs"
-        >
+        <Tabs value={activeTool} onValueChange={changeTool} className="tool-tabs">
           <AppShell
             soundEnabled={sounds.soundEnabled}
             onToggleSound={sounds.toggleSound}
-            headerActions={activeTool === "pomodoro" && (
-              <button
-                className="pomodoro-settings-trigger"
-                type="button"
-                aria-label="Pomodoro settings"
-                aria-haspopup="dialog"
-                aria-expanded={pomodoroSettingsOpen}
-                title="Pomodoro settings"
-                onClick={() => setPomodoroSettingsOpen(true)}
-              >
-                <Settings2 />
-              </button>
-            )}
+            headerActions={
+              activeTool === "pomodoro" && (
+                <button
+                  className="pomodoro-settings-trigger"
+                  type="button"
+                  aria-label="Pomodoro settings"
+                  aria-haspopup="dialog"
+                  aria-expanded={pomodoroSettingsOpen}
+                  title="Pomodoro settings"
+                  onClick={() => setPomodoroSettingsOpen(true)}
+                >
+                  <Settings2 />
+                </button>
+              )
+            }
             titleTabs={
               <TabsList className="workspace-title-tabs" aria-label="Tools">
                 <h1>
@@ -63,6 +57,9 @@ export function App() {
                 </TabsTrigger>
                 <TabsTrigger value="habits" data-ui-sound="open">
                   habits
+                </TabsTrigger>
+                <TabsTrigger value="blocks" data-ui-sound="open">
+                  blocks
                 </TabsTrigger>
               </TabsList>
             }
@@ -80,6 +77,9 @@ export function App() {
             </TabsContent>
             <TabsContent value="habits">
               <HabitsTool />
+            </TabsContent>
+            <TabsContent value="blocks">
+              <BlocksTool />
             </TabsContent>
           </AppShell>
         </Tabs>

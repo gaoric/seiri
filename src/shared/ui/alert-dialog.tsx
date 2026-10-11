@@ -7,27 +7,14 @@ export function AlertDialog(props: AlertDialogPrimitive.Root.Props) {
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
 }
 
-export function AlertDialogTrigger(
-  props: AlertDialogPrimitive.Trigger.Props,
-) {
-  return (
-    <AlertDialogPrimitive.Trigger
-      data-slot="alert-dialog-trigger"
-      {...props}
-    />
-  );
+export function AlertDialogTrigger(props: AlertDialogPrimitive.Trigger.Props) {
+  return <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />;
 }
 
-export function AlertDialogContent({
-  className,
-  ...props
-}: AlertDialogPrimitive.Popup.Props) {
+export function AlertDialogContent({ className, ...props }: AlertDialogPrimitive.Popup.Props) {
   return (
     <AlertDialogPrimitive.Portal>
-      <AlertDialogPrimitive.Backdrop
-        data-slot="alert-dialog-overlay"
-        className="dialog-overlay"
-      />
+      <AlertDialogPrimitive.Backdrop data-slot="alert-dialog-overlay" className="dialog-overlay" />
       <AlertDialogPrimitive.Popup
         data-slot="alert-dialog-content"
         className={cn("dialog-content", className)}
@@ -37,10 +24,7 @@ export function AlertDialogContent({
   );
 }
 
-export function AlertDialogTitle({
-  className,
-  ...props
-}: AlertDialogPrimitive.Title.Props) {
+export function AlertDialogTitle({ className, ...props }: AlertDialogPrimitive.Title.Props) {
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
@@ -67,8 +51,7 @@ export function AlertDialogCancel({
   className,
   variant = "subtle",
   ...props
-}: AlertDialogPrimitive.Close.Props &
-  Pick<ButtonProps, "variant" | "size">) {
+}: AlertDialogPrimitive.Close.Props & Pick<ButtonProps, "variant" | "size">) {
   return (
     <AlertDialogPrimitive.Close
       data-slot="alert-dialog-cancel"
@@ -84,23 +67,17 @@ export function AlertDialogAction({
   variant,
   size,
   ...props
-}: AlertDialogPrimitive.Close.Props &
-  Pick<ButtonProps, "variant" | "size">) {
+}: AlertDialogPrimitive.Close.Props & Pick<ButtonProps, "variant" | "size">) {
   return (
     <AlertDialogPrimitive.Close
       data-slot="alert-dialog-action"
       className={cn(className)}
-      render={
-        <Button variant={variant} size={size} data-ui-sound="close" />
-      }
+      render={<Button variant={variant} size={size} data-ui-sound="close" />}
       {...props}
     />
   );
 }
 
-export function AlertDialogActions({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+export function AlertDialogActions({ className, ...props }: React.ComponentProps<"div">) {
   return <div className={cn("dialog-actions", className)} {...props} />;
 }

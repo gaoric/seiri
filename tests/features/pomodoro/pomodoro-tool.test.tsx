@@ -14,27 +14,22 @@ describe("pomodoro timer", () => {
     expect(screen.getByText("25:00")).toBeVisible();
     expect(screen.getByText("Focus")).toBeVisible();
     expect(screen.getByRole("button", { name: "Skip focus" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Reset current timer" }))
-      .toBeVisible();
-    expect(screen.getByRole("button", { name: "Reset Pomodoro session" }))
-      .toBeVisible();
-    expect(document.querySelectorAll(".pomodoro-focus-dots > span"))
-      .toHaveLength(4);
-    expect(document.querySelectorAll(".pomodoro-focus-dots .is-active"))
-      .toHaveLength(0);
+    expect(screen.getByRole("button", { name: "Reset current timer" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Reset Pomodoro session" })).toBeVisible();
+    expect(document.querySelectorAll(".pomodoro-focus-dots > span")).toHaveLength(4);
+    expect(document.querySelectorAll(".pomodoro-focus-dots .is-active")).toHaveLength(0);
 
     fireEvent.click(screen.getByRole("button", { name: "Start timer" }));
-    expect(screen.getByRole("button", { name: "Pause timer" }))
-      .toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Skip focus" }))
-      .toBeVisible();
-    expect(document.querySelectorAll(".pomodoro-focus-dots .is-active"))
-      .toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Pause timer" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Skip focus" })).toBeVisible();
+    expect(document.querySelectorAll(".pomodoro-focus-dots .is-active")).toHaveLength(1);
 
     fireEvent.click(screen.getByRole("button", { name: "Pause timer" }));
     expect(screen.getByRole("button", { name: "Skip focus" })).toBeVisible();
-    expect(document.querySelectorAll(".pomodoro-focus-dots .is-active"))
-      .toHaveLength(1);
+    expect(document.querySelectorAll(".pomodoro-focus-dots .is-active")).toHaveLength(1);
   });
 
   test("skips through short breaks to the fourth-cycle long break", () => {
@@ -45,8 +40,10 @@ describe("pomodoro timer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Skip focus" }));
     expect(screen.getByText("Short break")).toBeVisible();
     expect(screen.getByText("05:00")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Start timer" }))
-      .toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Start timer" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Skip short break" }));
     fireEvent.click(screen.getByRole("button", { name: "Skip focus" }));
@@ -57,8 +54,7 @@ describe("pomodoro timer", () => {
 
     expect(screen.getByText("Long break")).toBeVisible();
     expect(screen.getByText("15:00")).toBeVisible();
-    expect(document.querySelectorAll(".pomodoro-focus-dots .is-active"))
-      .toHaveLength(4);
+    expect(document.querySelectorAll(".pomodoro-focus-dots .is-active")).toHaveLength(4);
   });
 
   test("resets only the current session and pauses it", () => {
@@ -70,26 +66,29 @@ describe("pomodoro timer", () => {
 
     expect(screen.getByText("Short break")).toBeVisible();
     expect(screen.getByText("05:00")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Start timer" }))
-      .toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByRole("progressbar", { name: "Short break progress" }))
-      .toHaveAttribute("aria-valuenow", "0");
+    expect(screen.getByRole("button", { name: "Start timer" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(screen.getByRole("progressbar", { name: "Short break progress" })).toHaveAttribute(
+      "aria-valuenow",
+      "0",
+    );
   });
 
   test("resets the full session to the first focus round", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("tab", { name: "pomo" }));
     fireEvent.click(screen.getByRole("button", { name: "Skip focus" }));
-    fireEvent.click(
-      screen.getByRole("button", { name: "Reset Pomodoro session" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Reset Pomodoro session" }));
 
     expect(screen.getByText("Focus")).toBeVisible();
     expect(screen.getByText("25:00")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Start timer" }))
-      .toHaveAttribute("aria-pressed", "false");
-    expect(document.querySelectorAll(".pomodoro-focus-dots .is-active"))
-      .toHaveLength(0);
+    expect(screen.getByRole("button", { name: "Start timer" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(document.querySelectorAll(".pomodoro-focus-dots .is-active")).toHaveLength(0);
   });
 
   test("seeks to the clicked point on the timer ring", () => {
@@ -131,10 +130,8 @@ describe("pomodoro timer", () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByRole("dialog", { name: "Pomodoro settings" }))
-      .toBeVisible();
-    expect(document.querySelector(".pomodoro-settings-overlay"))
-      .toBeVisible();
+    expect(screen.getByRole("dialog", { name: "Pomodoro settings" })).toBeVisible();
+    expect(document.querySelector(".pomodoro-settings-overlay")).toBeVisible();
     expect(screen.getByRole("heading", { name: "Timer" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Alarm" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Themes" })).toBeVisible();
@@ -171,9 +168,11 @@ describe("pomodoro timer", () => {
     ]);
     expect(alarmOptions[0]).toHaveAttribute("aria-checked", "true");
     expect(within(themes).getAllByRole("radio")).toHaveLength(8);
-    expect(screen.getByRole("button", {
-      name: "Set play / pause shortcut",
-    })).toHaveTextContent("Space");
+    expect(
+      screen.getByRole("button", {
+        name: "Set play / pause shortcut",
+      }),
+    ).toHaveTextContent("Space");
 
     fireEvent.change(focus, { target: { value: "40" } });
     fireEvent.change(rounds, { target: { value: "6" } });
@@ -181,15 +180,17 @@ describe("pomodoro timer", () => {
     fireEvent.change(alarmVolume, { target: { value: "45" } });
     fireEvent.click(within(themes).getByRole("radio", { name: "Sage" }));
     expect(screen.getByText("40:00")).toBeVisible();
-    expect(within(alarm).getByRole("radio", { name: "Marimba" }))
-      .toHaveAttribute("aria-checked", "true");
+    expect(within(alarm).getByRole("radio", { name: "Marimba" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
     expect(alarmVolume).toHaveValue("45");
-    expect(within(themes).getByRole("radio", { name: "Sage" }))
-      .toHaveAttribute("aria-checked", "true");
-    expect(screen.getByLabelText("Pomodoro timer"))
-      .toHaveStyle("--pomodoro-accent: #a8d5ba");
-    expect(document.querySelectorAll(".pomodoro-focus-dots > span"))
-      .toHaveLength(6);
+    expect(within(themes).getByRole("radio", { name: "Sage" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByLabelText("Pomodoro timer")).toHaveStyle("--pomodoro-accent: #a8d5ba");
+    expect(document.querySelectorAll(".pomodoro-focus-dots > span")).toHaveLength(6);
   });
 
   test("supports timer keyboard shortcuts only from the Pomodoro tab", () => {
@@ -197,16 +198,22 @@ describe("pomodoro timer", () => {
 
     fireEvent.keyDown(document.body, { key: " ", code: "Space" });
     fireEvent.click(screen.getByRole("tab", { name: "pomo" }));
-    expect(screen.getByRole("button", { name: "Start timer" }))
-      .toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Start timer" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
 
     fireEvent.keyDown(document.body, { key: " ", code: "Space" });
-    expect(screen.getByRole("button", { name: "Pause timer" }))
-      .toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Pause timer" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
 
     fireEvent.keyDown(document.body, { key: " ", code: "Space" });
-    expect(screen.getByRole("button", { name: "Start timer" }))
-      .toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Start timer" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
 
     fireEvent.keyDown(document.body, { key: "s", code: "KeyS" });
     expect(screen.getByText("Short break")).toBeVisible();
@@ -214,8 +221,10 @@ describe("pomodoro timer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Start timer" }));
     fireEvent.keyDown(document.body, { key: "r", code: "KeyR" });
     expect(screen.getByText("05:00")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Start timer" }))
-      .toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Start timer" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
 
     fireEvent.keyDown(document.body, {
       key: "R",
@@ -230,9 +239,7 @@ describe("pomodoro timer", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("tab", { name: "pomo" }));
     await act(async () => {
-      fireEvent.click(
-        screen.getByRole("button", { name: "Pomodoro settings" }),
-      );
+      fireEvent.click(screen.getByRole("button", { name: "Pomodoro settings" }));
       await Promise.resolve();
     });
 
@@ -249,24 +256,28 @@ describe("pomodoro timer", () => {
     });
 
     fireEvent.keyDown(document.body, { key: " ", code: "Space" });
-    expect(screen.getByRole("button", { name: "Start timer" }))
-      .toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Start timer" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
 
     settingsButton.focus();
     fireEvent.keyDown(settingsButton, { key: "p", code: "KeyP" });
-    expect(screen.getByRole("button", { name: "Pause timer" }))
-      .toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Pause timer" }))
-      .toHaveAttribute("aria-keyshortcuts", "P");
+    expect(screen.getByRole("button", { name: "Pause timer" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Pause timer" })).toHaveAttribute(
+      "aria-keyshortcuts",
+      "P",
+    );
   });
 
   test("auto-start continues into a skipped session when enabled", async () => {
     render(<App />);
     fireEvent.click(screen.getByRole("tab", { name: "pomo" }));
     await act(async () => {
-      fireEvent.click(
-        screen.getByRole("button", { name: "Pomodoro settings" }),
-      );
+      fireEvent.click(screen.getByRole("button", { name: "Pomodoro settings" }));
       await Promise.resolve();
     });
     const autoStart = screen.getByRole("switch", {
@@ -281,8 +292,10 @@ describe("pomodoro timer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Skip focus" }));
 
     expect(screen.getByText("Short break")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Pause timer" }))
-      .toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Pause timer" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   test("restores all Pomodoro preferences when the app reopens", async () => {
@@ -323,30 +336,33 @@ describe("pomodoro timer", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("tab", { name: "pomo" }));
     expect(screen.getByText("40:00")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Start timer" }))
-      .toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByRole("button", { name: "Start timer" }))
-      .toHaveAttribute("aria-keyshortcuts", "P");
+    expect(screen.getByRole("button", { name: "Start timer" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(screen.getByRole("button", { name: "Start timer" })).toHaveAttribute(
+      "aria-keyshortcuts",
+      "P",
+    );
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Pomodoro settings" }));
       await Promise.resolve();
     });
     expect(screen.getByLabelText("Focus duration in minutes")).toHaveValue("40");
-    expect(screen.getByLabelText("Short break duration in minutes"))
-      .toHaveValue("8");
-    expect(screen.getByLabelText("Long break duration in minutes"))
-      .toHaveValue("20");
+    expect(screen.getByLabelText("Short break duration in minutes")).toHaveValue("8");
+    expect(screen.getByLabelText("Long break duration in minutes")).toHaveValue("20");
     expect(screen.getByLabelText("Focus rounds")).toHaveValue("6");
-    expect(screen.getByRole("switch", { name: "Auto-start sessions" }))
-      .toHaveAttribute("aria-checked", "true");
-    expect(screen.getByRole("radio", { name: "Ring" }))
-      .toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("switch", { name: "Auto-start sessions" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByRole("radio", { name: "Ring" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByLabelText("Alarm volume")).toHaveValue("0");
-    expect(screen.getByRole("radio", { name: "Teal" }))
-      .toHaveAttribute("aria-checked", "true");
-    expect(screen.getByRole("button", { name: "Set play / pause shortcut" }))
-      .toHaveTextContent("P");
+    expect(screen.getByRole("radio", { name: "Teal" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("button", { name: "Set play / pause shortcut" })).toHaveTextContent(
+      "P",
+    );
   });
 
   test.each([
@@ -363,9 +379,10 @@ describe("pomodoro timer", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("tab", { name: "pomo" }));
     expect(screen.getByText("25:00")).toBeVisible();
-    expect(document.querySelectorAll(".pomodoro-focus-dots > span"))
-      .toHaveLength(4);
-    expect(screen.getByRole("button", { name: "Start timer" }))
-      .toHaveAttribute("aria-keyshortcuts", "Space");
+    expect(document.querySelectorAll(".pomodoro-focus-dots > span")).toHaveLength(4);
+    expect(screen.getByRole("button", { name: "Start timer" })).toHaveAttribute(
+      "aria-keyshortcuts",
+      "Space",
+    );
   });
 });

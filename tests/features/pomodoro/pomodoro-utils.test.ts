@@ -10,10 +10,7 @@ import {
 describe("pomodoro schedule", () => {
   test("runs four focus sessions with short breaks before a long break", () => {
     expect(
-      POMODORO_SESSIONS.map(({ kind, durationSeconds }) => [
-        kind,
-        durationSeconds / 60,
-      ]),
+      POMODORO_SESSIONS.map(({ kind, durationSeconds }) => [kind, durationSeconds / 60]),
     ).toEqual([
       ["focus", 25],
       ["short-break", 5],
@@ -41,10 +38,7 @@ describe("pomodoro schedule", () => {
       rounds: 2,
     });
 
-    expect(sessions.map(({ kind, durationSeconds }) => [
-      kind,
-      durationSeconds / 60,
-    ])).toEqual([
+    expect(sessions.map(({ kind, durationSeconds }) => [kind, durationSeconds / 60])).toEqual([
       ["focus", 40],
       ["short-break", 10],
       ["focus", 40],

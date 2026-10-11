@@ -24,9 +24,9 @@ export function SelectTrigger({
       {...props}
     >
       {children}
-      {showChevron && <SelectPrimitive.Icon
-        render={<ChevronDown className="size-3 opacity-50" />}
-      />}
+      {showChevron && (
+        <SelectPrimitive.Icon render={<ChevronDown className="size-3 opacity-50" />} />
+      )}
     </SelectPrimitive.Trigger>
   );
 }
@@ -34,12 +34,7 @@ export function SelectTrigger({
 type SelectContentProps = SelectPrimitive.Popup.Props &
   Pick<
     SelectPrimitive.Positioner.Props,
-    | "align"
-    | "alignOffset"
-    | "collisionAvoidance"
-    | "side"
-    | "sideOffset"
-    | "alignItemWithTrigger"
+    "align" | "alignOffset" | "collisionAvoidance" | "side" | "sideOffset" | "alignItemWithTrigger"
   >;
 
 export function SelectContent({
@@ -103,14 +98,18 @@ export function SelectItem({
         render={
           <span
             data-slot="select-item-indicator"
-            className={cn("absolute flex h-4 items-center justify-center",
-              indicator === "line" ? "left-1 w-2" : "left-2 w-4")}
+            className={cn(
+              "absolute flex h-4 items-center justify-center",
+              indicator === "line" ? "left-1 w-2" : "left-2 w-4",
+            )}
           />
         }
       >
-        {indicator === "line"
-          ? <span className="h-3 w-0.5 rounded-full bg-current" aria-hidden="true" />
-          : <Check className="size-3.5" />}
+        {indicator === "line" ? (
+          <span className="h-3 w-0.5 rounded-full bg-current" aria-hidden="true" />
+        ) : (
+          <Check className="size-3.5" />
+        )}
       </SelectPrimitive.ItemIndicator>
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
     </SelectPrimitive.Item>

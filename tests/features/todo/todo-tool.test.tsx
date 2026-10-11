@@ -1,11 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { App } from "@/app/App";
 import { UI_SOUND_EVENT } from "@/shared/sound/use-ui-sounds";
 import { useTaskStore } from "@/features/todo/todo-store";
@@ -36,10 +30,7 @@ describe("app interactions", () => {
     render(<App />);
     expect(screen.getByRole("heading", { name: "todo" })).toBeInTheDocument();
     expect(screen.getByText("A focused task")).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /Active/ })).toHaveAttribute(
-      "data-active",
-      "",
-    );
+    expect(screen.getByRole("tab", { name: /Active/ })).toHaveAttribute("data-active", "");
   });
 
   test("offers compact create and demo actions in an empty workspace", () => {
@@ -57,8 +48,7 @@ describe("app interactions", () => {
 
     fireEvent.click(tryDemo);
     expect(useTaskStore.getState().isDemoMode).toBeTrue();
-    expect(screen.getByText("Click any field to edit it inline"))
-      .toBeInTheDocument();
+    expect(screen.getByText("Click any field to edit it inline")).toBeInTheDocument();
   });
 
   test("edits the title inline", () => {
@@ -77,9 +67,7 @@ describe("app interactions", () => {
     const editor = screen.getByLabelText("Task description");
     fireEvent.change(editor, { target: { value: "A better description" } });
     fireEvent.keyDown(editor, { key: "Enter", ctrlKey: true });
-    expect(useTaskStore.getState().tasks.one.description).toBe(
-      "A better description",
-    );
+    expect(useTaskStore.getState().tasks.one.description).toBe("A better description");
   });
 
   test("sounds task disclosure as open and close", () => {
@@ -131,9 +119,7 @@ describe("app interactions", () => {
 
   test("archives via status and keeps permanent deletion out of Active", () => {
     render(<App />);
-    expect(
-      screen.queryByLabelText(/Delete .* permanently/),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Delete .* permanently/)).not.toBeInTheDocument();
     act(() => {
       useTaskStore.getState().updateTask("one", { status: "done" });
     });
@@ -149,21 +135,13 @@ describe("app interactions", () => {
     });
     render(<App />);
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Sort by title ascending" }),
-    );
-    expect(screen.getAllByRole("article")[0]).toHaveTextContent(
-      "A focused task",
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Sort by title ascending" }));
+    expect(screen.getAllByRole("article")[0]).toHaveTextContent("A focused task");
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Sort by title descending" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Sort by title descending" }));
     expect(screen.getAllByRole("article")[0]).toHaveTextContent("Zebra task");
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Turn off title sorting" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Turn off title sorting" }));
     expect(screen.getAllByRole("article")[0]).toHaveTextContent("Zebra task");
   });
 
@@ -176,8 +154,7 @@ describe("app interactions", () => {
     });
     fireEvent.click(document.body);
 
-    expect(document.querySelector(".task-life-cycle.is-canceling"))
-      .toBeInTheDocument();
+    expect(document.querySelector(".task-life-cycle.is-canceling")).toBeInTheDocument();
     await waitFor(() => {
       expect(useTaskStore.getState().activeOrder).toEqual(["one"]);
       expect(useTaskStore.getState().tasks[createdId]).toBeUndefined();
@@ -190,8 +167,7 @@ describe("app interactions", () => {
     const createdId = useTaskStore.getState().activeOrder[0];
 
     expect(useTaskStore.getState().tasks[createdId]).toBeDefined();
-    expect(document.querySelector(".task-life-cycle.is-canceling"))
-      .not.toBeInTheDocument();
+    expect(document.querySelector(".task-life-cycle.is-canceling")).not.toBeInTheDocument();
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
@@ -209,9 +185,7 @@ describe("app interactions", () => {
     });
 
     await act(async () => {
-      fireEvent.click(
-        row.querySelector('[role="combobox"][aria-label="Priority"]')!,
-      );
+      fireEvent.click(row.querySelector('[role="combobox"][aria-label="Priority"]')!);
       await Promise.resolve();
     });
     expect(useTaskStore.getState().tasks[createdId]).toBeDefined();
@@ -253,13 +227,14 @@ describe("app interactions", () => {
     const mute = screen.getByRole("button", { name: "Mute sounds" });
     fireEvent.click(mute);
     expect(localStorage.getItem("seiri.sounds.enabled")).toBe("false");
-    expect(screen.getByRole("button", { name: "Enable sounds" }))
-      .toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Enable sounds" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
 
     firstRender.unmount();
     render(<App />);
-    expect(screen.getByRole("button", { name: "Enable sounds" }))
-      .toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Enable sounds" })).toBeInTheDocument();
   });
 
   test("keeps an explicitly confirmed blank task", () => {

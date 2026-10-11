@@ -24,18 +24,9 @@ export const STATUS_LABELS: Record<TaskStatus, string> = {
   kill: "Kill",
 };
 
-export const ESTIMATE_UNITS: EstimateUnit[] = [
-  "minutes",
-  "hours",
-  "days",
-  "weeks",
-  "months",
-];
+export const ESTIMATE_UNITS: EstimateUnit[] = ["minutes", "hours", "days", "weeks", "months"];
 
-export function normalizeEstimateAmount(
-  value: string | number,
-  unit: EstimateUnit,
-) {
+export function normalizeEstimateAmount(value: string | number, unit: EstimateUnit) {
   const parsed = typeof value === "number" ? value : Number(value.trim());
   const [min, max] = ESTIMATE_BOUNDS[unit];
   if (!Number.isFinite(parsed)) return min;
@@ -43,9 +34,7 @@ export function normalizeEstimateAmount(
 }
 
 export function formatEstimate(estimate: Estimate) {
-  const unit = estimate.amount === 1
-    ? estimate.unit.slice(0, -1)
-    : estimate.unit;
+  const unit = estimate.amount === 1 ? estimate.unit.slice(0, -1) : estimate.unit;
   return `${estimate.amount} ${unit}`;
 }
 
@@ -70,9 +59,7 @@ export function keyToDate(key: string) {
 }
 
 function dayOrdinal(date: Date) {
-  return Math.floor(
-    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000,
-  );
+  return Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000);
 }
 
 export function daysUntil(dateKey: string, today = new Date()) {
@@ -162,16 +149,13 @@ export function sortTaskIds(
 ) {
   return ids
     .map((id, index) => ({ id, index, task: tasks[id] }))
-    .filter((item): item is { id: string; index: number; task: Task } =>
-      Boolean(item.task),
-    )
+    .filter((item): item is { id: string; index: number; task: Task } => Boolean(item.task))
     .sort((left, right) => {
       const leftBlank = isBlankForSort(left.task, key);
       const rightBlank = isBlankForSort(right.task, key);
       if (leftBlank !== rightBlank) return leftBlank ? 1 : -1;
       const comparison = compareTasks(left.task, right.task, key);
-      return (direction === "asc" ? comparison : -comparison) ||
-        left.index - right.index;
+      return (direction === "asc" ? comparison : -comparison) || left.index - right.index;
     })
     .map(({ id }) => id);
 }
@@ -252,8 +236,7 @@ export function demoTasks(): {
       status: "on-hold",
       estimate: { amount: 2, unit: "weeks" },
       dueOn: offsetDate(14),
-      description:
-        "Each heading cycles ascending, descending, then back to your manual order.",
+      description: "Each heading cycles ascending, descending, then back to your manual order.",
       createdAt: now,
       updatedAt: now,
     },

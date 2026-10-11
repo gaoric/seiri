@@ -15,42 +15,14 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import {
-  Archive,
-  ArrowDown,
-  ArrowUp,
-  CircleHelp,
-  ListTodo,
-  Plus,
-  Sparkles,
-} from "lucide-react";
-import {
-  AnimatePresence,
-  motion,
-  useAnimate,
-  useReducedMotion,
-} from "motion/react";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { Archive, ArrowDown, ArrowUp, CircleHelp, ListTodo, Plus, Sparkles } from "lucide-react";
+import { AnimatePresence, motion, useAnimate, useReducedMotion } from "motion/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { TaskRow } from "@/features/todo/components/TaskRow";
 import { Button } from "@/shared/ui/button";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/shared/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/shared/ui/tooltip";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import type { UiSounds } from "@/shared/sound";
 import {
   formatEstimate,
@@ -60,12 +32,7 @@ import {
 } from "@/features/todo/todo-utils";
 import { cn } from "@/shared/ui/utils";
 import { useTaskStore } from "@/features/todo/todo-store";
-import type {
-  SortDirection,
-  Task,
-  TaskSortKey,
-  TaskTab,
-} from "@/features/todo/todo-types";
+import type { SortDirection, Task, TaskSortKey, TaskTab } from "@/features/todo/todo-types";
 
 const COLUMNS: Array<{ key: TaskSortKey; label: string }> = [
   { key: "priority", label: "pri" },
@@ -113,10 +80,7 @@ type ScopedAnimator = ReturnType<typeof useAnimate>[1];
  * orb for its Archive flight. The row shell itself is never resized, so
  * neighboring tasks close the gap only after the status update is committed.
  */
-function runVhsShutdown(
-  animate: ScopedAnimator,
-  selector: string,
-) {
+function runVhsShutdown(animate: ScopedAnimator, selector: string) {
   return animate([
     [
       `${selector} .task-transition-hologram`,
@@ -166,11 +130,7 @@ function runVhsShutdown(
       `${selector} .task-vhs-flash`,
       {
         scaleY: [1, 0.12, 0.045],
-        filter: [
-          "brightness(1)",
-          "brightness(1.35)",
-          "brightness(1.8)",
-        ],
+        filter: ["brightness(1)", "brightness(1.35)", "brightness(1.8)"],
       },
       { at: 0.66, duration: 0.33, ease: [0.55, 0, 0.72, 0.35] },
     ],
@@ -191,32 +151,21 @@ function TaskDragPreview({ task }: { task: Task }) {
       <div className="task-main">
         <span className="drag-spacer" />
         <div className="priority-cell">
-          <span
-            className={cn(
-              "priority-trigger",
-              `priority-${task.priority}`,
-            )}
-          >
+          <span className={cn("priority-trigger", `priority-${task.priority}`)}>
             {task.priority}
           </span>
         </div>
         <div className="title-cell">
-          <span className={cn("title-button", !task.title && "is-empty")}>
-            {task.title || "—"}
-          </span>
+          <span className={cn("title-button", !task.title && "is-empty")}>{task.title || "—"}</span>
         </div>
         <div className="status-cell">
-          <span
-            className={cn("status-trigger", `status-${task.status}`)}
-          >
+          <span className={cn("status-trigger", `status-${task.status}`)}>
             {STATUS_LABELS[task.status]}
           </span>
         </div>
         <div className="estimate-cell">
           <span className="property-trigger estimate-trigger">
-            {task.estimate
-              ? formatEstimate(task.estimate)
-              : "—"}
+            {task.estimate ? formatEstimate(task.estimate) : "—"}
           </span>
         </div>
         <div className="due-cell">
@@ -241,11 +190,7 @@ function isTypingTarget(target: EventTarget | null) {
 
 export type TodoSoundEffects = Pick<
   UiSounds,
-  | "playConfirmation"
-  | "playHologramOff"
-  | "playHologramOn"
-  | "playNewTaskDrop"
-  | "playVhsShutdown"
+  "playConfirmation" | "playHologramOff" | "playHologramOn" | "playNewTaskDrop" | "playVhsShutdown"
 >;
 
 type TodoToolProps = {
@@ -255,13 +200,8 @@ type TodoToolProps = {
 export function TodoTool({ soundEffects }: TodoToolProps) {
   const [animationScope, animate] = useAnimate<HTMLDivElement>();
   const prefersReducedMotion = useReducedMotion();
-  const {
-    playConfirmation,
-    playHologramOff,
-    playHologramOn,
-    playNewTaskDrop,
-    playVhsShutdown,
-  } = soundEffects;
+  const { playConfirmation, playHologramOff, playHologramOn, playNewTaskDrop, playVhsShutdown } =
+    soundEffects;
   const tasks = useTaskStore((state) => state.tasks);
   const activeOrder = useTaskStore((state) => state.activeOrder);
   const archiveOrder = useTaskStore((state) => state.archiveOrder);
@@ -281,14 +221,11 @@ export function TodoTool({ soundEffects }: TodoToolProps) {
   const [tab, setTab] = useState<TaskTab>("active");
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [newTaskDraftId, setNewTaskDraftId] = useState<string | null>(null);
-  const [creationAnimation, setCreationAnimation] =
-    useState<CreationAnimation | null>(null);
+  const [creationAnimation, setCreationAnimation] = useState<CreationAnimation | null>(null);
   const [cancelingDraftId, setCancelingDraftId] = useState<string | null>(null);
   const [killingTaskId, setKillingTaskId] = useState<string | null>(null);
-  const [completionAnimation, setCompletionAnimation] =
-    useState<CompletionAnimation | null>(null);
-  const [archiveTwinkle, setArchiveTwinkle] =
-    useState<ArchiveTwinkle | null>(null);
+  const [completionAnimation, setCompletionAnimation] = useState<CompletionAnimation | null>(null);
+  const [archiveTwinkle, setArchiveTwinkle] = useState<ArchiveTwinkle | null>(null);
   const [sorts, setSorts] = useState<Record<TaskTab, ActiveSort | null>>({
     active: null,
     archive: null,
@@ -302,10 +239,7 @@ export function TodoTool({ soundEffects }: TodoToolProps) {
   const ids = tab === "active" ? activeOrder : archiveOrder;
   const sort = sorts[tab];
   const activeDragTask = activeDragId ? tasks[activeDragId] : null;
-  const visibleIds = useMemo(
-    () => ids.filter((id) => Boolean(tasks[id])),
-    [ids, tasks],
-  );
+  const visibleIds = useMemo(() => ids.filter((id) => Boolean(tasks[id])), [ids, tasks]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -323,12 +257,10 @@ export function TodoTool({ soundEffects }: TodoToolProps) {
     playNewTaskDrop();
     const buttonRect = newTaskButtonRef.current?.getBoundingClientRect();
     const listRect = taskListRef.current?.getBoundingClientRect();
-    const orbDistance = buttonRect && listRect
-      ? Math.max(
-          72,
-          listRect.top + 53 - (buttonRect.top + buttonRect.height / 2),
-        )
-      : 120;
+    const orbDistance =
+      buttonRect && listRect
+        ? Math.max(72, listRect.top + 53 - (buttonRect.top + buttonRect.height / 2))
+        : 120;
     const id = addTask();
     setTab("active");
     setNewTaskDraftId(id);
@@ -339,12 +271,7 @@ export function TodoTool({ soundEffects }: TodoToolProps) {
   const requestKill = useCallback(
     (id: string) => {
       const task = useTaskStore.getState().tasks[id];
-      if (
-        !task ||
-        task.status === "kill" ||
-        killingTaskId ||
-        completionAnimation
-      ) {
+      if (!task || task.status === "kill" || killingTaskId || completionAnimation) {
         return;
       }
       if (isArchivedStatus(task.status)) {
@@ -359,18 +286,11 @@ export function TodoTool({ soundEffects }: TodoToolProps) {
   const requestDone = useCallback(
     (id: string) => {
       const task = useTaskStore.getState().tasks[id];
-      if (
-        !task ||
-        isArchivedStatus(task.status) ||
-        killingTaskId ||
-        completionAnimation
-      ) {
+      if (!task || isArchivedStatus(task.status) || killingTaskId || completionAnimation) {
         return;
       }
 
-      const row = document.querySelector<HTMLElement>(
-        `[data-task-id="${id}"] .task-card`,
-      );
+      const row = document.querySelector<HTMLElement>(`[data-task-id="${id}"] .task-card`);
       const rowRect = row?.getBoundingClientRect();
       const archiveRect = archiveTabRef.current?.getBoundingClientRect();
       if (prefersReducedMotion || !rowRect || !archiveRect) {
@@ -432,16 +352,12 @@ export function TodoTool({ soundEffects }: TodoToolProps) {
 
   useEffect(() => {
     const completingId =
-      completionAnimation?.stage === "collapsing"
-        ? completionAnimation.taskId
-        : null;
+      completionAnimation?.stage === "collapsing" ? completionAnimation.taskId : null;
     const id = killingTaskId ?? completingId;
     if (!id) return;
 
     const completing = Boolean(completingId);
-    const selector = completing
-      ? ".task-life-cycle.is-completing"
-      : ".task-life-cycle.is-killing";
+    const selector = completing ? ".task-life-cycle.is-completing" : ".task-life-cycle.is-killing";
     playHologramOff();
     const vhsSoundTimer = window.setTimeout(playVhsShutdown, 510);
     const controls = runVhsShutdown(animate, selector);
@@ -483,8 +399,7 @@ export function TodoTool({ soundEffects }: TodoToolProps) {
       toast("Task completed", {
         action: {
           label: "Undo",
-          onClick: () =>
-            updateTask(animation.taskId, { status: previousStatus }),
+          onClick: () => updateTask(animation.taskId, { status: previousStatus }),
         },
       });
     },
@@ -515,10 +430,7 @@ export function TodoTool({ soundEffects }: TodoToolProps) {
         ".new-task-button",
         {
           opacity: [1, 0],
-          clipPath: [
-            "inset(0 0 0 0 round 6px)",
-            "inset(50% 50% 50% 50% round 50%)",
-          ],
+          clipPath: ["inset(0 0 0 0 round 6px)", "inset(50% 50% 50% 50% round 50%)"],
         },
         { duration: 0.18, ease: "easeIn" },
       ],
@@ -527,13 +439,7 @@ export function TodoTool({ soundEffects }: TodoToolProps) {
         {
           opacity: [0, 1, 1, 0.9, 0],
           scale: [0.35, 1, 0.85, 1.15, 0.2],
-          y: [
-            0,
-            orbDistance * 0.12,
-            orbDistance * 0.55,
-            orbDistance * 0.9,
-            orbDistance,
-          ],
+          y: [0, orbDistance * 0.12, orbDistance * 0.55, orbDistance * 0.9, orbDistance],
         },
         {
           at: 0.08,
@@ -586,10 +492,7 @@ export function TodoTool({ soundEffects }: TodoToolProps) {
         ".new-task-button",
         {
           opacity: [1, 1],
-          clipPath: [
-            "inset(0 100% 0 0 round 6px)",
-            "inset(0 0 0 0 round 6px)",
-          ],
+          clipPath: ["inset(0 100% 0 0 round 6px)", "inset(0 0 0 0 round 6px)"],
           filter: [
             "brightness(1.7) drop-shadow(0 0 7px rgba(194, 230, 255, 0.7))",
             "brightness(1) drop-shadow(0 0 0 rgba(194, 230, 255, 0))",
@@ -624,17 +527,18 @@ export function TodoTool({ soundEffects }: TodoToolProps) {
         },
         { at: 1.59, duration: 0.2, ease: "linear" },
       ],
-      [
-        ".new-task-button",
-        { opacity: [1, 1] },
-        { at: 1.79, duration: 0.14, ease: "linear" },
-      ],
+      [".new-task-button", { opacity: [1, 1] }, { at: 1.79, duration: 0.14, ease: "linear" }],
     ]);
 
     let canceled = false;
+    // Once the user opens the description, the animation must respect subsequent closes.
+    let descriptionWasOpened = useTaskStore.getState().expandedId === creationAnimation.taskId;
+    const unsubscribe = useTaskStore.subscribe((state) => {
+      if (state.expandedId === creationAnimation.taskId) descriptionWasOpened = true;
+    });
     controls.then(() => {
       if (canceled) return;
-      if (useTaskStore.getState().tasks[creationAnimation.taskId]) {
+      if (!descriptionWasOpened && useTaskStore.getState().tasks[creationAnimation.taskId]) {
         setExpandedId(creationAnimation.taskId);
       }
       setCreationAnimation((current) =>
@@ -643,6 +547,7 @@ export function TodoTool({ soundEffects }: TodoToolProps) {
     });
     return () => {
       canceled = true;
+      unsubscribe();
       window.clearTimeout(hologramSoundTimer);
       controls.stop();
       const button = newTaskButtonRef.current;
@@ -650,13 +555,7 @@ export function TodoTool({ soundEffects }: TodoToolProps) {
       button?.style.removeProperty("clip-path");
       button?.style.removeProperty("filter");
     };
-  }, [
-    animate,
-    creationAnimation,
-    playHologramOn,
-    prefersReducedMotion,
-    setExpandedId,
-  ]);
+  }, [animate, creationAnimation, playHologramOn, prefersReducedMotion, setExpandedId]);
 
   const clearSort = useCallback((targetTab: TaskTab) => {
     delete defaultOrders.current[targetTab];
@@ -668,10 +567,7 @@ export function TodoTool({ soundEffects }: TodoToolProps) {
     setSelectedId(visibleIds[0] ?? null);
   }, [selectedId, setSelectedId, visibleIds]);
 
-  useEffect(
-    () => () => document.body.classList.remove("is-dragging-task"),
-    [],
-  );
+  useEffect(() => () => document.body.classList.remove("is-dragging-task"), []);
 
   useEffect(() => {
     function onKeyDown(event: globalThis.KeyboardEvent) {
@@ -690,9 +586,7 @@ export function TodoTool({ soundEffects }: TodoToolProps) {
       if (key === "j" || key === "k") {
         event.preventDefault();
         const delta = key === "j" ? 1 : -1;
-        const next = visibleIds[
-          Math.min(visibleIds.length - 1, Math.max(0, index + delta))
-        ];
+        const next = visibleIds[Math.min(visibleIds.length - 1, Math.max(0, index + delta))];
         if (next) {
           setSelectedId(next);
           document
@@ -706,10 +600,7 @@ export function TodoTool({ soundEffects }: TodoToolProps) {
       } else if (event.key === "Enter") {
         event.preventDefault();
         setExpandedId(expandedId === selectedId ? null : selectedId);
-      } else if (
-        event.shiftKey &&
-        (event.key === "ArrowUp" || event.key === "ArrowDown")
-      ) {
+      } else if (event.shiftKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
         event.preventDefault();
         clearSort(tab);
         moveTask(tab, selectedId, event.key === "ArrowUp" ? -1 : 1);
@@ -765,8 +656,7 @@ export function TodoTool({ soundEffects }: TodoToolProps) {
     }
 
     if (!sort) defaultOrders.current[tab] = [...visibleIds];
-    const direction =
-      sort?.key === key && sort.direction === "asc" ? "desc" : "asc";
+    const direction = sort?.key === key && sort.direction === "asc" ? "desc" : "asc";
     sortTasks(tab, key, direction);
     setSorts((current) => ({
       ...current,
@@ -792,347 +682,269 @@ export function TodoTool({ soundEffects }: TodoToolProps) {
 
   return (
     <div ref={animationScope} className="todo-tool" aria-label="Todo list">
-      <Tabs
-              value={tab}
-              onValueChange={(value) => handleTabChange(value as TaskTab)}
+      <Tabs value={tab} onValueChange={(value) => handleTabChange(value as TaskTab)}>
+        <div className="tab-row">
+          <TabsList aria-label="Task views">
+            <TabsTrigger value="active" data-ui-sound="open">
+              <ListTodo />
+              Active
+              <span>{activeOrder.length}</span>
+            </TabsTrigger>
+            <TabsTrigger
+              ref={archiveTabRef}
+              value="archive"
+              data-ui-sound="open"
+              className={cn((completionAnimation || archiveTwinkle) && "is-absorbing")}
             >
-              <div className="tab-row">
-                <TabsList aria-label="Task views">
-                  <TabsTrigger value="active" data-ui-sound="open">
-                    <ListTodo />
-                    Active
-                    <span>{activeOrder.length}</span>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    ref={archiveTabRef}
-                    value="archive"
-                    data-ui-sound="open"
-                    className={cn(
-                      (completionAnimation || archiveTwinkle) &&
-                        "is-absorbing",
-                    )}
-                  >
-                    <Archive />
-                    Archive
-                    <span>{archiveOrder.length}</span>
-                  </TabsTrigger>
-                </TabsList>
-                <div className="tab-actions">
-                  <Tooltip>
-                    <TooltipTrigger
-                      render={
-                        <button
-                          className="shortcut-help"
-                          type="button"
-                          aria-label="Keyboard shortcuts"
-                        >
-                          <CircleHelp />
-                        </button>
-                      }
-                    />
-                    <TooltipContent
-                      side="bottom"
-                      align="end"
-                      className="shortcut-tooltip"
-                    >
-                      <strong>Keyboard</strong>
-                      <span>N · new task</span>
-                      <span>J / K · move</span>
-                      <span>Enter · description</span>
-                      <span>E · edit title</span>
-                      <span>Shift + ↑ / ↓ · reorder</span>
-                    </TooltipContent>
-                  </Tooltip>
-                  <div
-                    className={cn(
-                      "new-task-launcher",
-                      creationAnimation && "is-creating",
-                    )}
-                  >
-                    <Button
-                      key={creationAnimation ? "creating" : "idle"}
-                      ref={newTaskButtonRef}
-                      size="sm"
-                      className="new-task-button"
-                      data-ui-sound="custom"
-                      onClick={createTask}
-                      disabled={Boolean(creationAnimation)}
-                    >
-                      <Plus />
-                      New task
-                    </Button>
-                    {creationAnimation && (
-                      <>
-                        <span
-                          className="new-task-light-orb"
-                          aria-hidden="true"
-                        />
-                        <span
-                          className="new-task-button-loader"
-                          aria-hidden="true"
-                        />
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="column-labels">
-                <span />
-                {COLUMNS.map(({ key, label }) => {
-                  const active = sort?.key === key;
-                  const nextDirection = !active
-                    ? "ascending"
-                    : sort.direction === "asc"
-                      ? "descending"
-                      : "off";
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      data-ui-sound={
-                        active && sort.direction === "desc" ? "close" : "open"
-                      }
-                      className={active ? "is-sorted" : undefined}
-                      aria-label={
-                        nextDirection === "off"
-                          ? `Turn off ${label} sorting`
-                          : `Sort by ${label} ${nextDirection}`
-                      }
-                      onClick={() => handleSort(key)}
-                    >
-                      {label}
-                      <span className="sort-indicator" aria-hidden="true">
-                        {active &&
-                          (sort.direction === "asc" ? (
-                            <ArrowUp />
-                          ) : (
-                            <ArrowDown />
-                          ))}
-                      </span>
-                    </button>
-                  );
-                })}
-                <span />
-              </div>
-
-              <TabsContent
-                ref={taskListRef}
-                value={tab}
-                className="task-list"
-              >
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCorners}
-                  onDragStart={handleDragStart}
-                  onDragEnd={handleDragEnd}
-                  onDragCancel={finishDrag}
-                >
-                  <SortableContext
-                    items={visibleIds}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <AnimatePresence initial={false} mode="popLayout">
-                      {visibleIds.map((id) => {
-                        const task = tasks[id];
-                        if (!task) return null;
-                        const isCanceling = cancelingDraftId === id;
-                        const isKilling = killingTaskId === id;
-                        const isCompleting =
-                          completionAnimation?.taskId === id;
-                        const isCompletionCollapsing =
-                          isCompleting &&
-                          completionAnimation?.stage === "collapsing";
-                        return (
-                          <motion.div
-                            key={id}
-                            data-task-id={id}
-                            layout="position"
-                            transition={{
-                              layout: {
-                                duration: 0.34,
-                                ease: [0.22, 1, 0.36, 1],
-                              },
-                            }}
-                            className={cn(
-                              "task-row-shell",
-                              creationAnimation?.taskId === id &&
-                                "is-materializing",
-                            )}
-                          >
-                            <motion.div
-                              className={cn(
-                                "task-life-cycle",
-                                isCanceling && "is-canceling",
-                                isKilling && "is-killing",
-                                isCompleting && "is-completing",
-                              )}
-                              initial={{ opacity: 1 }}
-                              animate={
-                                isCanceling
-                                  ? { opacity: 0 }
-                                  : { opacity: 1 }
-                              }
-                              transition={
-                                isCanceling
-                                  ? { duration: 0.18, ease: "easeOut" }
-                                  : { duration: 0.12, ease: "easeOut" }
-                              }
-                              onAnimationComplete={() => {
-                                if (isCanceling) finishDraftCancellation(id);
-                              }}
-                            >
-                              <TaskRow
-                                task={task}
-                                tab={tab}
-                                selected={selectedId === id}
-                                expanded={expandedId === id}
-                                statusOverride={
-                                  isKilling
-                                    ? "kill"
-                                    : isCompleting
-                                      ? "done"
-                                      : undefined
-                                }
-                                editTitleRequested={editingTitleId === id}
-                                newTaskDraft={newTaskDraftId === id}
-                                onEditTitleHandled={() =>
-                                  setEditingTitleId(null)
-                                }
-                                onNewTaskDraftFinished={() =>
-                                  setNewTaskDraftId((current) =>
-                                    current === id ? null : current,
-                                  )
-                                }
-                                onNewTaskDraftCanceled={() => {
-                                  setCancelingDraftId(id);
-                                  setCreationAnimation((current) =>
-                                    current?.taskId === id ? null : current,
-                                  );
-                                }}
-                                onKillRequested={() => requestKill(id)}
-                                onDoneRequested={() => requestDone(id)}
-                              />
-                              {creationAnimation?.taskId === id && (
-                                <span
-                                  className="new-task-hologram"
-                                  aria-hidden="true"
-                                />
-                              )}
-                              {(isKilling || isCompletionCollapsing) && (
-                                <>
-                                  <span
-                                    className="task-transition-hologram"
-                                    aria-hidden="true"
-                                  />
-                                  <span
-                                    className="task-vhs-flash"
-                                    aria-hidden="true"
-                                  />
-                                </>
-                              )}
-                            </motion.div>
-                          </motion.div>
-                        );
-                      })}
-                    </AnimatePresence>
-                  </SortableContext>
-                  <DragOverlay
-                    adjustScale={false}
-                    dropAnimation={{ duration: 160, easing: "ease-out" }}
-                  >
-                    {activeDragTask ? (
-                      <TaskDragPreview task={activeDragTask} />
-                    ) : null}
-                  </DragOverlay>
-                </DndContext>
-
-                {visibleIds.length === 0 && (
-                  <div className="empty-state">
-                    {tab === "active" ? <ListTodo /> : <Archive />}
-                    <p>
-                      {tab === "active"
-                        ? "Nothing active. Enjoy the quiet."
-                        : "The archive is empty."}
-                    </p>
-                    {tab === "active" && (
-                      <div className="empty-state-actions">
-                        <Button
-                          variant="subtle"
-                          size="sm"
-                          className="empty-state-action"
-                          data-ui-sound="custom"
-                          onClick={createTask}
-                        >
-                          <Plus />
-                          Add a task
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="empty-state-action try-demo-button"
-                          onClick={handleDemoModeToggle}
-                        >
-                          <Sparkles />
-                          Try demo
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-
-            {completionAnimation?.stage === "traveling" && (
-              <motion.span
-                key={completionAnimation.taskId}
-                className="task-complete-light-orb"
-                aria-hidden="true"
-                style={{
-                  left: completionAnimation.startX,
-                  top: completionAnimation.startY,
-                }}
-                initial={{ opacity: 1, scale: 1, x: 0, y: 0 }}
-                animate={{
-                  opacity: [1, 1, 1, 0],
-                  scale: [1, 1.06, 0.72, 0.2],
-                  x: [0, 0, completionAnimation.deltaX, completionAnimation.deltaX],
-                  y: [0, 0, completionAnimation.deltaY, completionAnimation.deltaY],
-                }}
-                transition={{
-                  duration: 1.22,
-                  ease: [0.42, 0, 0.24, 1],
-                  times: [0, 0.12, 0.9, 1],
-                }}
-                onAnimationComplete={() =>
-                  finishCompletion(completionAnimation)
+              <Archive />
+              Archive
+              <span>{archiveOrder.length}</span>
+            </TabsTrigger>
+          </TabsList>
+          <div className="tab-actions">
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <button className="shortcut-help" type="button" aria-label="Keyboard shortcuts">
+                    <CircleHelp />
+                  </button>
                 }
               />
-            )}
+              <TooltipContent side="bottom" align="end" className="shortcut-tooltip">
+                <strong>Keyboard</strong>
+                <span>N · new task</span>
+                <span>J / K · move</span>
+                <span>Enter · description</span>
+                <span>E · edit title</span>
+                <span>Shift + ↑ / ↓ · reorder</span>
+              </TooltipContent>
+            </Tooltip>
+            <div className={cn("new-task-launcher", creationAnimation && "is-creating")}>
+              <Button
+                key={creationAnimation ? "creating" : "idle"}
+                ref={newTaskButtonRef}
+                size="sm"
+                className="new-task-button"
+                data-ui-sound="custom"
+                onClick={createTask}
+                disabled={Boolean(creationAnimation)}
+              >
+                <Plus />
+                New task
+              </Button>
+              {creationAnimation && (
+                <>
+                  <span className="new-task-light-orb" aria-hidden="true" />
+                  <span className="new-task-button-loader" aria-hidden="true" />
+                </>
+              )}
+            </div>
+          </div>
+        </div>
 
-            {archiveTwinkle && (
-              <motion.span
-                key={archiveTwinkle.id}
-                className="archive-twinkle"
-                aria-hidden="true"
-                style={{ left: archiveTwinkle.x, top: archiveTwinkle.y }}
-                initial={{ opacity: 0, scale: 0.2, rotate: -20 }}
-                animate={{
-                  opacity: [0, 1, 0.7, 0],
-                  scale: [0.2, 1.4, 0.8, 0],
-                  rotate: [-20, 0, 12, 20],
-                }}
-                transition={{ duration: 0.38, ease: "easeOut" }}
-                onAnimationComplete={() => setArchiveTwinkle(null)}
-              />
-            )}
+        <div className="column-labels">
+          <span />
+          {COLUMNS.map(({ key, label }) => {
+            const active = sort?.key === key;
+            const nextDirection = !active
+              ? "ascending"
+              : sort.direction === "asc"
+                ? "descending"
+                : "off";
+            return (
+              <button
+                key={key}
+                type="button"
+                data-ui-sound={active && sort.direction === "desc" ? "close" : "open"}
+                className={active ? "is-sorted" : undefined}
+                aria-label={
+                  nextDirection === "off"
+                    ? `Turn off ${label} sorting`
+                    : `Sort by ${label} ${nextDirection}`
+                }
+                onClick={() => handleSort(key)}
+              >
+                {label}
+                <span className="sort-indicator" aria-hidden="true">
+                  {active && (sort.direction === "asc" ? <ArrowUp /> : <ArrowDown />)}
+                </span>
+              </button>
+            );
+          })}
+          <span />
+        </div>
+
+        <TabsContent ref={taskListRef} value={tab} className="task-list">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragCancel={finishDrag}
+          >
+            <SortableContext items={visibleIds} strategy={verticalListSortingStrategy}>
+              <AnimatePresence initial={false} mode="popLayout">
+                {visibleIds.map((id) => {
+                  const task = tasks[id];
+                  if (!task) return null;
+                  const isCanceling = cancelingDraftId === id;
+                  const isKilling = killingTaskId === id;
+                  const isCompleting = completionAnimation?.taskId === id;
+                  const isCompletionCollapsing =
+                    isCompleting && completionAnimation?.stage === "collapsing";
+                  return (
+                    <motion.div
+                      key={id}
+                      data-task-id={id}
+                      layout="position"
+                      transition={{
+                        layout: {
+                          duration: 0.34,
+                          ease: [0.22, 1, 0.36, 1],
+                        },
+                      }}
+                      className={cn(
+                        "task-row-shell",
+                        creationAnimation?.taskId === id && "is-materializing",
+                      )}
+                    >
+                      <motion.div
+                        className={cn(
+                          "task-life-cycle",
+                          isCanceling && "is-canceling",
+                          isKilling && "is-killing",
+                          isCompleting && "is-completing",
+                        )}
+                        initial={{ opacity: 1 }}
+                        animate={isCanceling ? { opacity: 0 } : { opacity: 1 }}
+                        transition={
+                          isCanceling
+                            ? { duration: 0.18, ease: "easeOut" }
+                            : { duration: 0.12, ease: "easeOut" }
+                        }
+                        onAnimationComplete={() => {
+                          if (isCanceling) finishDraftCancellation(id);
+                        }}
+                      >
+                        <TaskRow
+                          task={task}
+                          tab={tab}
+                          selected={selectedId === id}
+                          expanded={expandedId === id}
+                          statusOverride={isKilling ? "kill" : isCompleting ? "done" : undefined}
+                          editTitleRequested={editingTitleId === id}
+                          newTaskDraft={newTaskDraftId === id}
+                          onEditTitleHandled={() => setEditingTitleId(null)}
+                          onNewTaskDraftFinished={() =>
+                            setNewTaskDraftId((current) => (current === id ? null : current))
+                          }
+                          onNewTaskDraftCanceled={() => {
+                            setCancelingDraftId(id);
+                            setCreationAnimation((current) =>
+                              current?.taskId === id ? null : current,
+                            );
+                          }}
+                          onKillRequested={() => requestKill(id)}
+                          onDoneRequested={() => requestDone(id)}
+                        />
+                        {creationAnimation?.taskId === id && (
+                          <span className="new-task-hologram" aria-hidden="true" />
+                        )}
+                        {(isKilling || isCompletionCollapsing) && (
+                          <>
+                            <span className="task-transition-hologram" aria-hidden="true" />
+                            <span className="task-vhs-flash" aria-hidden="true" />
+                          </>
+                        )}
+                      </motion.div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </SortableContext>
+            <DragOverlay adjustScale={false} dropAnimation={{ duration: 160, easing: "ease-out" }}>
+              {activeDragTask ? <TaskDragPreview task={activeDragTask} /> : null}
+            </DragOverlay>
+          </DndContext>
+
+          {visibleIds.length === 0 && (
+            <div className="empty-state">
+              {tab === "active" ? <ListTodo /> : <Archive />}
+              <p>
+                {tab === "active" ? "Nothing active. Enjoy the quiet." : "The archive is empty."}
+              </p>
+              {tab === "active" && (
+                <div className="empty-state-actions">
+                  <Button
+                    variant="subtle"
+                    size="sm"
+                    className="empty-state-action"
+                    data-ui-sound="custom"
+                    onClick={createTask}
+                  >
+                    <Plus />
+                    Add a task
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="empty-state-action try-demo-button"
+                    onClick={handleDemoModeToggle}
+                  >
+                    <Sparkles />
+                    Try demo
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {completionAnimation?.stage === "traveling" && (
+        <motion.span
+          key={completionAnimation.taskId}
+          className="task-complete-light-orb"
+          aria-hidden="true"
+          style={{
+            left: completionAnimation.startX,
+            top: completionAnimation.startY,
+          }}
+          initial={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+          animate={{
+            opacity: [1, 1, 1, 0],
+            scale: [1, 1.06, 0.72, 0.2],
+            x: [0, 0, completionAnimation.deltaX, completionAnimation.deltaX],
+            y: [0, 0, completionAnimation.deltaY, completionAnimation.deltaY],
+          }}
+          transition={{
+            duration: 1.22,
+            ease: [0.42, 0, 0.24, 1],
+            times: [0, 0.12, 0.9, 1],
+          }}
+          onAnimationComplete={() => finishCompletion(completionAnimation)}
+        />
+      )}
+
+      {archiveTwinkle && (
+        <motion.span
+          key={archiveTwinkle.id}
+          className="archive-twinkle"
+          aria-hidden="true"
+          style={{ left: archiveTwinkle.x, top: archiveTwinkle.y }}
+          initial={{ opacity: 0, scale: 0.2, rotate: -20 }}
+          animate={{
+            opacity: [0, 1, 0.7, 0],
+            scale: [0.2, 1.4, 0.8, 0],
+            rotate: [-20, 0, 12, 20],
+          }}
+          transition={{ duration: 0.38, ease: "easeOut" }}
+          onAnimationComplete={() => setArchiveTwinkle(null)}
+        />
+      )}
 
       <footer>
-        <span>
-          {isDemoMode
-            ? "Demo changes reset on refresh"
-            : "Stored on this device"}
-        </span>
+        <span>{isDemoMode ? "Demo changes reset on refresh" : "Stored on this device"}</span>
         <span aria-hidden="true">·</span>
         <span>Made with simplicity in mind</span>
       </footer>

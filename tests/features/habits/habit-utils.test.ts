@@ -43,7 +43,9 @@ describe("habit week utilities", () => {
       { id: "check", name: "Check", icon: null, logType: "checkbox", createdAt: "" },
       { id: "level", name: "Level", icon: null, logType: "level", createdAt: "" },
     ];
-    expect(habitDayProgress(habits, { "2026-10-06": { check: true, level: 2 } }, "2026-10-06")).toBe(75);
+    expect(
+      habitDayProgress(habits, { "2026-10-06": { check: true, level: 2 } }, "2026-10-06"),
+    ).toBe(75);
     expect(habitDayProgress(habits, { "2026-10-06": { level: 4 } }, "2026-10-06")).toBe(50);
   });
 

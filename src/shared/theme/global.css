@@ -12,31 +12,47 @@ html {
   scrollbar-width: thin;
 }
 
-*::-webkit-scrollbar { width: 7px; height: 7px; }
-*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
 *::-webkit-scrollbar-thumb {
   border: 2px solid transparent;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.18);
   background-clip: padding-box;
 }
-*::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.3); }
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
 
 body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(circle at 50% -20%, rgba(255, 255, 255, 0.035), transparent 35%),
-    #111214;
+    radial-gradient(circle at 50% -20%, rgba(255, 255, 255, 0.035), transparent 35%), #111214;
 }
 
 button,
 input,
-textarea { font: inherit; }
-button { cursor: pointer; }
-button svg { width: 14px; height: 14px; }
-::selection { color: #fff; background: rgba(255, 255, 255, 0.18); }
+textarea {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button svg {
+  width: 14px;
+  height: 14px;
+}
+::selection {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+}
 
 .dialog-overlay {
   position: fixed;
@@ -61,7 +77,10 @@ button svg { width: 14px; height: 14px; }
   box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48);
 }
 
-.dialog-content h2 { margin: 0 0 8px; font-size: 17px; }
+.dialog-content h2 {
+  margin: 0 0 8px;
+  font-size: 17px;
+}
 .dialog-content p {
   margin: 0;
   color: rgba(255, 255, 255, 0.5);
@@ -77,7 +96,9 @@ button svg { width: 14px; height: 14px; }
 
 @media (prefers-reduced-motion: reduce) {
   /* Honor the OS setting across Motion, DnD settling, and CSS interactions. */
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

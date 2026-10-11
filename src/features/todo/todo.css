@@ -1,5 +1,3 @@
-@import "react-day-picker/style.css";
-
 .tab-actions {
   display: flex;
   align-items: center;
@@ -59,11 +57,7 @@
   inset: 0;
   border: 1px solid rgba(201, 234, 255, 0.76);
   border-radius: 6px;
-  background: linear-gradient(
-    90deg,
-    rgba(190, 229, 255, 0.2),
-    rgba(255, 255, 255, 0.92)
-  );
+  background: linear-gradient(90deg, rgba(190, 229, 255, 0.2), rgba(255, 255, 255, 0.92));
   box-shadow:
     0 0 8px rgba(204, 235, 255, 0.65),
     0 0 18px rgba(156, 215, 255, 0.32);
@@ -488,7 +482,7 @@ body.is-dragging-task * {
 
 .priority-0 {
   color: #fff;
-  background: #C41E3A;
+  background: #c41e3a;
   box-shadow: 0 0 0 1px rgba(255, 151, 142, 0.2) inset;
 }
 
@@ -856,59 +850,12 @@ body.is-dragging-task * {
   filter: brightness(1.35);
 }
 
-.calendar-popover {
-  width: 292px;
-  padding: 12px;
-}
-
-.rdp-root {
-  --rdp-accent-color: #f5f5f4;
-  --rdp-accent-background-color: rgba(255, 255, 255, 0.1);
-  --rdp-day_button-width: 34px;
-  --rdp-day_button-height: 32px;
-  --rdp-day-width: 36px;
-  --rdp-day-height: 34px;
-  margin: 0;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 13px;
-}
-
-.rdp-month_caption {
-  height: 35px;
-  font-size: 13px;
-}
-
-.rdp-weekday {
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 11px;
-}
-
-.rdp-day_button {
-  border-radius: 7px;
-}
-
-.rdp-day_button:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.rdp-selected .rdp-day_button {
-  color: rgba(255, 255, 255, 0.92);
-  background: rgba(255, 255, 255, 0.16);
-  font-weight: inherit;
-  transform: none;
-}
-
 /*
  * Task controls share one typography source; the title only changes size.
  * Popovers are portaled, so they must opt in separately from task-card.
  */
 .task-card :is(button, input, textarea),
-.task-drag-preview :is(
-  .priority-trigger,
-  .title-button,
-  .status-trigger,
-  .property-trigger
-),
+.task-drag-preview :is(.priority-trigger, .title-button, .status-trigger, .property-trigger),
 .new-task-button,
 [data-slot="popover-content"] :is(button, input),
 [data-slot="select-content"] [role="option"] {
@@ -1166,4 +1113,3 @@ footer {
     padding-left: 11px;
   }
 }
-

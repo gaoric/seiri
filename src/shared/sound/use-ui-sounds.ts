@@ -28,15 +28,11 @@ type ClickSound = "open" | "close" | "custom";
 export type UiSoundCue = Exclude<ClickSound, "custom">;
 
 export function requestUiSound(cue: UiSoundCue) {
-  document.dispatchEvent(
-    new CustomEvent<UiSoundCue>(UI_SOUND_EVENT, { detail: cue }),
-  );
+  document.dispatchEvent(new CustomEvent<UiSoundCue>(UI_SOUND_EVENT, { detail: cue }));
 }
 
 function findInteractive(target: EventTarget | null) {
-  return target instanceof Element
-    ? target.closest<HTMLElement>(INTERACTIVE_SELECTOR)
-    : null;
+  return target instanceof Element ? target.closest<HTMLElement>(INTERACTIVE_SELECTOR) : null;
 }
 
 export function getClickSound(element: HTMLElement): ClickSound {
@@ -63,26 +59,11 @@ export function useUiSounds() {
   const playbackOptions = { ...SOUND_PLAYBACK_OPTIONS, soundEnabled };
   const [playOpen] = useSound(click003Sound, playbackOptions);
   const [playClose] = useSound(click002Sound, playbackOptions);
-  const [playHologramOn] = useSound(
-    forceField000Sound,
-    playbackOptions,
-  );
-  const [playHologramOff] = useSound(
-    forceField001Sound,
-    playbackOptions,
-  );
-  const [playVhsShutdown] = useSound(
-    laserLarge002Sound,
-    playbackOptions,
-  );
-  const [playConfirmation] = useSound(
-    confirmation002Sound,
-    playbackOptions,
-  );
-  const [playNewTaskDrop] = useSound(
-    drop001Sound,
-    playbackOptions,
-  );
+  const [playHologramOn] = useSound(forceField000Sound, playbackOptions);
+  const [playHologramOff] = useSound(forceField001Sound, playbackOptions);
+  const [playVhsShutdown] = useSound(laserLarge002Sound, playbackOptions);
+  const [playConfirmation] = useSound(confirmation002Sound, playbackOptions);
+  const [playNewTaskDrop] = useSound(drop001Sound, playbackOptions);
 
   const toggleSound = useCallback(() => {
     setSoundEnabled((current) => {
@@ -106,8 +87,7 @@ export function useUiSounds() {
       const interactive = findInteractive(event.target);
       if (!interactive) return;
 
-      const sound =
-        pendingClickSounds.get(interactive) ?? getClickSound(interactive);
+      const sound = pendingClickSounds.get(interactive) ?? getClickSound(interactive);
       pendingClickSounds.delete(interactive);
       if (sound === "open") playOpen();
       if (sound === "close") playClose();

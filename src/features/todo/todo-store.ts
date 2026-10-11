@@ -34,11 +34,7 @@ type TaskState = PersistedState & {
   deleteTask: (id: string) => boolean;
   reorderTask: (tab: TaskTab, activeId: string, overId: string) => void;
   moveTask: (tab: TaskTab, id: string, direction: -1 | 1) => void;
-  sortTasks: (
-    tab: TaskTab,
-    key: TaskSortKey,
-    direction: SortDirection,
-  ) => void;
+  sortTasks: (tab: TaskTab, key: TaskSortKey, direction: SortDirection) => void;
   restoreTaskOrder: (tab: TaskTab, order: string[]) => void;
   setSelectedId: (id: string | null) => void;
   setExpandedId: (id: string | null) => void;
@@ -47,12 +43,7 @@ type TaskState = PersistedState & {
 };
 
 const initial = emptyTaskState();
-const LEGACY_SAMPLE_IDS = new Set([
-  "welcome",
-  "shortcuts",
-  "mobile",
-  "archive-demo",
-]);
+const LEGACY_SAMPLE_IDS = new Set(["welcome", "shortcuts", "mobile", "archive-demo"]);
 
 function newId() {
   return globalThis.crypto?.randomUUID?.() ?? `task-${Date.now()}`;
@@ -70,10 +61,7 @@ function persistedState(state: PersistedState): PersistedState {
   };
 }
 
-function migratePersistedState(
-  persisted: unknown,
-  version: number,
-): PersistedState {
+function migratePersistedState(persisted: unknown, version: number): PersistedState {
   const state = persisted as Partial<PersistedState>;
   const tasks = { ...(state.tasks ?? {}) };
   if (version < 2) {
@@ -129,10 +117,7 @@ export const useTaskStore = create<TaskState>()(
           return {
             tasks,
             activeOrder,
-            selectedId:
-              state.selectedId === id
-                ? activeOrder[0] ?? null
-                : state.selectedId,
+            selectedId: state.selectedId === id ? (activeOrder[0] ?? null) : state.selectedId,
             expandedId: state.expandedId === id ? null : state.expandedId,
           };
         });
@@ -220,32 +205,22 @@ export const useTaskStore = create<TaskState>()(
 
       sortTasks: (tab, key, direction) => {
         set((state) => {
-          const orderKey =
-            tab === "active" ? "activeOrder" : "archiveOrder";
+          const orderKey = tab === "active" ? "activeOrder" : "archiveOrder";
           return {
-            [orderKey]: sortTaskIds(
-              state[orderKey],
-              state.tasks,
-              key,
-              direction,
-            ),
+            [orderKey]: sortTaskIds(state[orderKey], state.tasks, key, direction),
           };
         });
       },
 
       restoreTaskOrder: (tab, order) => {
         set((state) => {
-          const orderKey =
-            tab === "active" ? "activeOrder" : "archiveOrder";
+          const orderKey = tab === "active" ? "activeOrder" : "archiveOrder";
           const currentOrder = state[orderKey];
           const currentIds = new Set(currentOrder);
           const restored = order.filter((id) => currentIds.has(id));
           const restoredIds = new Set(restored);
           return {
-            [orderKey]: [
-              ...restored,
-              ...currentOrder.filter((id) => !restoredIds.has(id)),
-            ],
+            [orderKey]: [...restored, ...currentOrder.filter((id) => !restoredIds.has(id))],
           };
         });
       },
@@ -274,8 +249,7 @@ export const useTaskStore = create<TaskState>()(
           ...userState,
           isDemoMode: false,
           userStateBeforeDemo: null,
-          selectedId:
-            userState.activeOrder[0] ?? userState.archiveOrder[0] ?? null,
+          selectedId: userState.activeOrder[0] ?? userState.archiveOrder[0] ?? null,
           expandedId: null,
         });
       },
