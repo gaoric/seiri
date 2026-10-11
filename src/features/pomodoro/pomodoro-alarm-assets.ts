@@ -16,32 +16,12 @@ function mixkitSound(name: string, dataUri: string, duration: number): SoundAsse
   };
 }
 
-export const fluteNotificationSound = mixkitSound(
-  "04-flute-notification",
-  fluteNotificationUrl,
-  3,
-);
+export const fluteNotificationSound = mixkitSound("04-flute-notification", fluteNotificationUrl, 3);
 
-export const forestBirdsSound = mixkitSound(
-  "01-forest-birds",
-  forestBirdsUrl,
-  3,
-);
+export const forestBirdsSound = mixkitSound("01-forest-birds", forestBirdsUrl, 3);
 
-export const happyBellsSound = mixkitSound(
-  "04-happy-bells",
-  happyBellsUrl,
-  3,
-);
+export const happyBellsSound = mixkitSound("04-happy-bells", happyBellsUrl, 3);
 
-export const magicMarimbaSound = mixkitSound(
-  "02-magic-marimba",
-  magicMarimbaUrl,
-  3,
-);
+export const magicMarimbaSound = mixkitSound("02-magic-marimba", magicMarimbaUrl, 3);
 
-export const bellDelaySound = mixkitSound(
-  "Bell sound with delay",
-  bellDelayUrl,
-  3,
-);
+export const bellDelaySound = mixkitSound("Bell sound with delay", bellDelayUrl, 3);

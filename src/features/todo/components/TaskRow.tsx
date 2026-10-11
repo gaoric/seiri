@@ -1,15 +1,6 @@
-import {
-  useSortable,
-} from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-  Check,
-  GripVertical,
-  RotateCcw,
-  Save,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Check, GripVertical, RotateCcw, Save, Trash2, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   type KeyboardEvent,
@@ -35,13 +26,7 @@ import {
   AlertDialogTrigger,
 } from "@/shared/ui/alert-dialog";
 import { Button } from "@/shared/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { requestUiSound } from "@/shared/sound/use-ui-sounds";
 import { isArchivedStatus, STATUS_LABELS } from "@/features/todo/todo-utils";
 import { cn } from "@/shared/ui/utils";
@@ -92,14 +77,9 @@ export function TaskRow({
   const taskRef = useRef<HTMLElement>(null);
   const cancelDraftRef = useRef(onNewTaskDraftCanceled);
   const draftChangedRef = useRef(false);
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: task.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task.id,
+  });
   const displayTitle = task.title || "—";
   const displayStatus = statusOverride ?? task.status;
 
@@ -127,21 +107,15 @@ export function TaskRow({
   useLayoutEffect(() => {
     if (!expanded || !descriptionRef.current) return;
     descriptionRef.current.style.height = "auto";
-    const borderHeight =
-      descriptionRef.current.offsetHeight -
-      descriptionRef.current.clientHeight;
-    descriptionRef.current.style.height =
-      `${descriptionRef.current.scrollHeight + borderHeight}px`;
+    const borderHeight = descriptionRef.current.offsetHeight - descriptionRef.current.clientHeight;
+    descriptionRef.current.style.height = `${descriptionRef.current.scrollHeight + borderHeight}px`;
   }, [descriptionDraft, expanded]);
 
   useEffect(() => {
     if (!expanded) return;
 
     function saveWhenClickingOutside(event: globalThis.PointerEvent) {
-      if (
-        !(event.target instanceof Node) ||
-        taskRef.current?.contains(event.target)
-      ) {
+      if (!(event.target instanceof Node) || taskRef.current?.contains(event.target)) {
         return;
       }
       const description = descriptionDraft.trim();
@@ -151,16 +125,8 @@ export function TaskRow({
     }
 
     document.addEventListener("pointerdown", saveWhenClickingOutside);
-    return () =>
-      document.removeEventListener("pointerdown", saveWhenClickingOutside);
-  }, [
-    descriptionDraft,
-    expanded,
-    setExpandedId,
-    task.description,
-    task.id,
-    updateTask,
-  ]);
+    return () => document.removeEventListener("pointerdown", saveWhenClickingOutside);
+  }, [descriptionDraft, expanded, setExpandedId, task.description, task.id, updateTask]);
 
   useEffect(() => {
     if (!newTaskDraft) return;
@@ -168,9 +134,7 @@ export function TaskRow({
     function cancelUntouchedDraftOnOutsideClick(event: globalThis.MouseEvent) {
       const eventPath = event.composedPath();
       const clickedOwnedEditor = eventPath.some(
-        (target) =>
-          target instanceof HTMLElement &&
-          target.dataset.taskEditorFor === task.id,
+        (target) => target instanceof HTMLElement && target.dataset.taskEditorFor === task.id,
       );
       if (
         draftChangedRef.current ||
@@ -189,10 +153,7 @@ export function TaskRow({
     }, 0);
     return () => {
       window.clearTimeout(activationTimer);
-      document.removeEventListener(
-        "click",
-        cancelUntouchedDraftOnOutsideClick,
-      );
+      document.removeEventListener("click", cancelUntouchedDraftOnOutsideClick);
     };
   }, [newTaskDraft, task.id]);
 
@@ -310,11 +271,7 @@ export function TaskRow({
         transform: CSS.Transform.toString(transform),
         transition: isDragging ? undefined : transition,
       }}
-      className={cn(
-        "task-card",
-        selected && "is-selected",
-        isDragging && "is-dragging",
-      )}
+      className={cn("task-card", selected && "is-selected", isDragging && "is-dragging")}
       tabIndex={0}
       aria-label={`${displayTitle}, ${STATUS_LABELS[displayStatus]}`}
       onFocus={() => setSelectedId(task.id)}
@@ -347,10 +304,7 @@ export function TaskRow({
           >
             <SelectTrigger
               aria-label="Priority"
-              className={cn(
-                "priority-trigger",
-                `priority-${task.priority}`,
-              )}
+              className={cn("priority-trigger", `priority-${task.priority}`)}
             >
               <SelectValue />
             </SelectTrigger>
@@ -402,10 +356,7 @@ export function TaskRow({
             >
               <SelectValue>{STATUS_LABELS[displayStatus]}</SelectValue>
             </SelectTrigger>
-            <SelectContent
-              className="status-options"
-              data-task-editor-for={task.id}
-            >
+            <SelectContent className="status-options" data-task-editor-for={task.id}>
               {STATUSES.map((status) => (
                 <SelectItem
                   key={status}
@@ -473,15 +424,11 @@ export function TaskRow({
                 <AlertDialogContent>
                   <AlertDialogTitle>Delete this task?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    “{displayTitle}” will be permanently removed. This cannot be
-                    undone.
+                    “{displayTitle}” will be permanently removed. This cannot be undone.
                   </AlertDialogDescription>
                   <AlertDialogActions>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      variant="danger"
-                      onClick={() => deleteTask(task.id)}
-                    >
+                    <AlertDialogAction variant="danger" onClick={() => deleteTask(task.id)}>
                       Delete permanently
                     </AlertDialogAction>
                   </AlertDialogActions>
@@ -503,47 +450,43 @@ export function TaskRow({
             transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="description-panel">
-          <textarea
-            ref={descriptionRef}
-            autoFocus={!newTaskDraft}
-            aria-label="Task description"
-            placeholder="Add a quiet note…"
-            value={descriptionDraft}
-            onChange={(event) => setDescriptionDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-                event.preventDefault();
-                saveDescription();
-              }
-              if (event.key === "Escape") {
-                event.preventDefault();
-                setDescriptionDraft(task.description);
-                setExpandedId(null);
-              }
-            }}
-          />
-          <div className="description-actions">
-            <span>⌘/Ctrl + Enter to save</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              data-ui-sound="close"
-              onClick={() => {
-                setDescriptionDraft(task.description);
-                setExpandedId(null);
-              }}
-            >
-              <X />
-              Cancel
-            </Button>
-            <Button size="sm" onClick={saveDescription}>
-              {descriptionDraft.trim() === task.description ? (
-                <Check />
-              ) : (
-                <Save />
-              )}
-              Save
-            </Button>
+              <textarea
+                ref={descriptionRef}
+                autoFocus={!newTaskDraft}
+                aria-label="Task description"
+                placeholder="Add a quiet note…"
+                value={descriptionDraft}
+                onChange={(event) => setDescriptionDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+                    event.preventDefault();
+                    saveDescription();
+                  }
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    setDescriptionDraft(task.description);
+                    setExpandedId(null);
+                  }
+                }}
+              />
+              <div className="description-actions">
+                <span>⌘/Ctrl + Enter to save</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  data-ui-sound="close"
+                  onClick={() => {
+                    setDescriptionDraft(task.description);
+                    setExpandedId(null);
+                  }}
+                >
+                  <X />
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={saveDescription}>
+                  {descriptionDraft.trim() === task.description ? <Check /> : <Save />}
+                  Save
+                </Button>
               </div>
             </div>
           </motion.div>

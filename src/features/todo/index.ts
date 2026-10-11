@@ -1,4 +1,1 @@
-export {
-  TodoTool,
-  type TodoSoundEffects,
-} from "@/features/todo/TodoTool";
+export { TodoTool, type TodoSoundEffects } from "@/features/todo/TodoTool";

@@ -223,7 +223,9 @@
   color: rgba(255, 255, 255, 0.38);
   background: transparent;
   outline: none;
-  transition: color 140ms ease, background 140ms ease;
+  transition:
+    color 140ms ease,
+    background 140ms ease;
 }
 
 .pomodoro-settings-close:hover,
@@ -375,7 +377,10 @@
   background: #25262a;
   font: inherit;
   outline: none;
-  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+  transition:
+    color 140ms ease,
+    border-color 140ms ease,
+    background 140ms ease;
 }
 
 .pomodoro-alarm-options button:hover,
@@ -409,7 +414,9 @@
   height: 12px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.7);
-  transition: transform 140ms ease, background 140ms ease;
+  transition:
+    transform 140ms ease,
+    background 140ms ease;
 }
 
 .pomodoro-auto-start[aria-checked="true"] {
@@ -439,7 +446,9 @@
   padding: 0;
   background: transparent;
   outline: none;
-  transition: border-color 140ms ease, transform 140ms ease;
+  transition:
+    border-color 140ms ease,
+    transform 140ms ease;
 }
 
 .pomodoro-theme-option > span {
@@ -495,7 +504,10 @@
   background: #25262a;
   font: inherit;
   outline: none;
-  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+  transition:
+    color 140ms ease,
+    border-color 140ms ease,
+    background 140ms ease;
 }
 
 .pomodoro-shortcut-setting button:hover,

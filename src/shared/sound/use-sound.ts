@@ -2,16 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getAudioContext, decodeAudioData } from "@/shared/sound/sound-engine";
-import type {
-  SoundAsset,
-  UseSoundOptions,
-  UseSoundReturn,
-} from "@/shared/sound/sound-types";
+import type { SoundAsset, UseSoundOptions, UseSoundReturn } from "@/shared/sound/sound-types";
 
-export function useSound(
-  sound: SoundAsset,
-  options: UseSoundOptions = {}
-): UseSoundReturn {
+export function useSound(sound: SoundAsset, options: UseSoundOptions = {}): UseSoundReturn {
   const {
     volume = 1,
     playbackRate = 1,
@@ -28,9 +21,7 @@ export function useSound(
   } = options;
 
   const [isPlaying, setIsPlaying] = useState(false);
-  const [duration, setDuration] = useState<number | null>(
-    sound.duration ?? null
-  );
+  const [duration, setDuration] = useState<number | null>(sound.duration ?? null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
   const bufferRef = useRef<AudioBuffer | null>(null);
@@ -49,9 +40,7 @@ export function useSound(
     decodeAudioData(sound.dataUri).then((buffer) => {
       if (!cancelled) {
         bufferRef.current = buffer;
-        normalizationGainRef.current = normalizeVolume
-          ? calculateNormalizationGain(buffer)
-          : 1;
+        normalizationGainRef.current = normalizeVolume ? calculateNormalizationGain(buffer) : 1;
         setDuration(buffer.duration);
       }
     });
@@ -79,18 +68,11 @@ export function useSound(
 
   const play = useCallback(
     (overrides?: { volume?: number; playbackRate?: number }) => {
-      if (
-        !soundEnabled ||
-        !bufferRef.current ||
-        typeof AudioContext === "undefined"
-      ) {
+      if (!soundEnabled || !bufferRef.current || typeof AudioContext === "undefined") {
         return;
       }
 
-      if (
-        (skipIfPlaying && sourceRef.current) ||
-        Date.now() < cooldownUntilRef.current
-      ) {
+      if ((skipIfPlaying && sourceRef.current) || Date.now() < cooldownUntilRef.current) {
         return;
       }
 
@@ -109,8 +91,7 @@ export function useSound(
 
       source.buffer = bufferRef.current;
       source.playbackRate.value = overrides?.playbackRate ?? playbackRate;
-      gain.gain.value =
-        (overrides?.volume ?? volume) * normalizationGainRef.current;
+      gain.gain.value = (overrides?.volume ?? volume) * normalizationGainRef.current;
 
       source.connect(gain);
       gain.connect(ctx.destination);
@@ -130,17 +111,7 @@ export function useSound(
       setIsPlaying(true);
       onPlay?.();
     },
-    [
-      soundEnabled,
-      playbackRate,
-      volume,
-      interrupt,
-      skipIfPlaying,
-      cooldownMs,
-      stop,
-      onPlay,
-      onEnd,
-    ]
+    [soundEnabled, playbackRate, volume, interrupt, skipIfPlaying, cooldownMs, stop, onPlay, onEnd],
   );
 
   const pause = useCallback(() => {

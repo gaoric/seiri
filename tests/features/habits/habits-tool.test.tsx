@@ -14,12 +14,42 @@ beforeEach(() => {
 });
 
 describe("habit tracker", () => {
+  test("resets legacy estimates once while preserving habits, logs and future Blocks estimates", async () => {
+    const habit: Habit = {
+      id: "read",
+      name: "Read",
+      icon: "book",
+      logType: "checkbox",
+      createdAt,
+      color: "teal",
+      estimateMinutes: 45,
+    };
+    const logs = { "2026-10-10": { read: true } };
+    localStorage.setItem(
+      "seiri.habits.v1",
+      JSON.stringify({
+        version: 1,
+        state: { habits: [habit, { ...habit, id: "move", estimateMinutes: 15 }], logs },
+      }),
+    );
+    await useHabitStore.persist.rehydrate();
+    expect(useHabitStore.getState().habits).toEqual([
+      { ...habit, estimateMinutes: 0 },
+      { ...habit, id: "move", estimateMinutes: 0 },
+    ]);
+    expect(useHabitStore.getState().logs).toEqual(logs);
+    expect(JSON.parse(localStorage.getItem("seiri.habits.v1")!).version).toBe(2);
+    useHabitStore.getState().updateHabit("read", { ...habit, estimateMinutes: 30 });
+    await useHabitStore.persist.rehydrate();
+    expect(useHabitStore.getState().habits[0]?.estimateMinutes).toBe(30);
+    expect(useHabitStore.getState().logs).toEqual(logs);
+  });
+
   test("creates an icon habit with a selected logging mode", async () => {
     render(<App />);
     fireEvent.click(screen.getByRole("tab", { name: "habits" }));
 
-    expect(screen.getByText("Build a week one small mark at a time."))
-      .toBeVisible();
+    expect(screen.getByText("Build a week one small mark at a time.")).toBeVisible();
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Add habit" }));
       await Promise.resolve();
@@ -27,13 +57,13 @@ describe("habit tracker", () => {
 
     const dialog = screen.getByRole("dialog", { name: "New habit" });
     expect(dialog).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Text: Write a short note" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Text: Write a short note" }),
+    ).not.toBeInTheDocument();
     fireEvent.change(screen.getByPlaceholderText("Read, stretch, journal…"), {
       target: { value: "Read" },
     });
-    fireEvent.click(
-      screen.getByRole("button", { name: "Number: Record an amount" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Number: Record an amount" }));
     fireEvent.click(screen.getByRole("button", { name: "Reading" }));
     fireEvent.click(screen.getByRole("button", { name: "Add habit" }));
 
@@ -82,14 +112,14 @@ describe("habit tracker", () => {
     expect(screen.getByLabelText(`${dateKey} completeness: 56%`)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Previous week" }));
     expect(screen.queryByLabelText(`${dateKey} completeness: 56%`)).not.toBeInTheDocument();
-    expect(screen.getByLabelText(`${localDateKey(moveWeek(new Date(), -1))} completeness: 0%`)).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(`${localDateKey(moveWeek(new Date(), -1))} completeness: 0%`),
+    ).toBeInTheDocument();
   });
 
   test("moves between weeks and stops at the current week", () => {
     useHabitStore.getState().replaceStateForTests({
-      habits: [
-        { id: "check", name: "Move", icon: "activity", logType: "checkbox", createdAt },
-      ],
+      habits: [{ id: "check", name: "Move", icon: "activity", logType: "checkbox", createdAt }],
       logs: {},
     });
     render(<App />);
@@ -100,20 +130,16 @@ describe("habit tracker", () => {
     }).textContent;
     expect(screen.getByRole("button", { name: "Next week" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Next week" }));
-    expect(screen.getByRole("combobox", { name: "Select week" }).textContent)
-      .toBe(currentWeek);
+    expect(screen.getByRole("combobox", { name: "Select week" }).textContent).toBe(currentWeek);
     fireEvent.click(screen.getByRole("button", { name: "Previous week" }));
     expect(screen.getByRole("button", { name: "Next week" })).toBeEnabled();
-    expect(screen.getByRole("combobox", { name: "Select week" }).textContent)
-      .not.toBe(currentWeek);
+    expect(screen.getByRole("combobox", { name: "Select week" }).textContent).not.toBe(currentWeek);
     fireEvent.click(screen.getByRole("button", { name: "Next week" }));
     expect(screen.getByRole("button", { name: "Next week" })).toBeDisabled();
-    expect(screen.getByRole("combobox", { name: "Select week" }).textContent)
-      .toBe(currentWeek);
+    expect(screen.getByRole("combobox", { name: "Select week" }).textContent).toBe(currentWeek);
     fireEvent.click(screen.getByRole("button", { name: "Previous week" }));
     fireEvent.click(screen.getByRole("button", { name: "Next week" }));
-    expect(screen.getByRole("combobox", { name: "Select week" }).textContent)
-      .toBe(currentWeek);
+    expect(screen.getByRole("combobox", { name: "Select week" }).textContent).toBe(currentWeek);
   });
 
   test("confirms deletion and removes only that habit and its logs from every week", async () => {
@@ -147,7 +173,8 @@ describe("habit tracker", () => {
     expect(screen.getByRole("button", { name: "Edit Read" })).toBeVisible();
     expect(useHabitStore.getState().logs).toEqual({ [today]: { read: true } });
     expect(JSON.parse(localStorage.getItem("seiri.habits.v1")!).state).toEqual({
-      habits: [habits[1]], logs: { [today]: { read: true } },
+      habits: [habits[1]],
+      logs: { [today]: { read: true } },
     });
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Edit Read" }));
@@ -161,8 +188,17 @@ describe("habit tracker", () => {
 
   test("edits habit details, preserves saved logs, and discards canceled edits", async () => {
     const dateKey = localDateKey(new Date());
-    const habit: Habit = { id: "read", name: "Read", icon: null, logType: "number", createdAt };
-    useHabitStore.getState().replaceStateForTests({ habits: [habit], logs: { [dateKey]: { read: 5 } } });
+    const habit: Habit = {
+      id: "read",
+      name: "Read",
+      icon: null,
+      logType: "number",
+      createdAt,
+      estimateMinutes: 45,
+    };
+    useHabitStore
+      .getState()
+      .replaceStateForTests({ habits: [habit], logs: { [dateKey]: { read: 5 } } });
     render(<App />);
     fireEvent.click(screen.getByRole("tab", { name: "habits" }));
     await act(async () => {
@@ -170,21 +206,30 @@ describe("habit tracker", () => {
     });
     expect(screen.getByRole("dialog", { name: "Edit habit" })).toBeVisible();
     expect(screen.getByRole("button", { name: "No icon" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByLabelText("Habit time estimate")).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Pages" } });
     fireEvent.click(screen.getByRole("button", { name: "Reading" }));
     fireEvent.click(screen.getByRole("button", { name: "Coral color" }));
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     expect(screen.getByRole("button", { name: "Edit Pages" })).toBeVisible();
     expect(screen.getByLabelText(`Pages on ${dateKey}`)).toHaveValue(5);
-    expect(useHabitStore.getState().habits).toEqual([{ ...habit, name: "Pages", icon: "book", color: "coral" }]);
-    expect(JSON.parse(localStorage.getItem("seiri.habits.v1")!).state.logs).toEqual({ [dateKey]: { read: 5 } });
+    expect(useHabitStore.getState().habits).toEqual([
+      { ...habit, name: "Pages", icon: "book", color: "coral", estimateMinutes: 45 },
+    ]);
+    expect(JSON.parse(localStorage.getItem("seiri.habits.v1")!).state.logs).toEqual({
+      [dateKey]: { read: 5 },
+    });
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Edit Pages" }));
     });
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Discard me" } });
     fireEvent.click(screen.getByRole("button", { name: "Check: Done or not done" }));
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(useHabitStore.getState().habits[0]).toMatchObject({ name: "Pages", logType: "number" });
+    expect(useHabitStore.getState().habits[0]).toMatchObject({
+      name: "Pages",
+      logType: "number",
+      estimateMinutes: 45,
+    });
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Edit Pages" }));
     });
@@ -214,7 +259,10 @@ describe("habit tracker", () => {
       expect(header.querySelector("span")?.textContent).toBe(
         monthDays[index].toLocaleDateString(undefined, { weekday: "long" }).slice(0, 1),
       );
-      expect(header).toHaveAttribute("aria-label", expect.stringContaining(`${monthDays[index].getDate()}`));
+      expect(header).toHaveAttribute(
+        "aria-label",
+        expect.stringContaining(`${monthDays[index].getDate()}`),
+      );
     });
     expect(screen.getByLabelText(`${dateKey} completeness: 100%`)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Next month" })).toBeDisabled();
@@ -232,7 +280,10 @@ describe("habit tracker", () => {
     while (!(screen.getByRole("button", { name: "Next week" }) as HTMLButtonElement).disabled) {
       fireEvent.click(screen.getByRole("button", { name: "Next week" }));
     }
-    expect(screen.getByRole("checkbox", { name: `Move on ${dateKey}` })).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByRole("checkbox", { name: `Move on ${dateKey}` })).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
     expect(screen.getByRole("button", { name: "Next week" })).toBeDisabled();
   });
 
@@ -258,25 +309,36 @@ describe("habit tracker", () => {
       fireEvent.click(level);
       expect(level).toHaveAttribute("aria-valuenow", String(step));
       expect(useHabitStore.getState().logs[dateKey]?.energy).toBe(step);
-      const radii = (selector: string) => [...level.querySelector(selector)!.getAttribute("d")!.matchAll(/A ([\d.]+) /g)]
-        .map((match) => Number(match[1]));
+      const radii = (selector: string) =>
+        [
+          ...level
+            .querySelector(selector)!
+            .getAttribute("d")!
+            .matchAll(/A ([\d.]+) /g),
+        ].map((match) => Number(match[1]));
       const [outer, inner] = radii(".habit-wheel-space");
       const [filledOuter, filledInner] = radii(".habit-wheel-level-fill");
       expect(filledOuter).toBeCloseTo(outer!);
-      expect(filledInner).toBeCloseTo(outer! - (outer! - inner!) * step / 4);
+      expect(filledInner).toBeCloseTo(outer! - ((outer! - inner!) * step) / 4);
     }
-    expect(level.querySelector(".habit-wheel-level-fill")?.getAttribute("d"))
-      .toBe(level.querySelector(".habit-wheel-space")?.getAttribute("d"));
+    expect(level.querySelector(".habit-wheel-level-fill")?.getAttribute("d")).toBe(
+      level.querySelector(".habit-wheel-space")?.getAttribute("d"),
+    );
     fireEvent.click(level);
     expect(level).toHaveAttribute("aria-valuenow", "0");
-    await act(async () => { fireEvent.click(screen.getByRole("button", { name: `Water on ${dateKey}` })); });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: `Water on ${dateKey}` }));
+    });
     fireEvent.change(screen.getByLabelText("Amount"), { target: { value: "2.5" } });
     fireEvent.click(screen.getByRole("button", { name: "Save entry" }));
     fireEvent.mouseEnter(screen.getByRole("button", { name: `Water on ${dateKey}` }));
     expect(screen.getByRole("tooltip")).toHaveTextContent("2.5");
-    expect(screen.getByRole("button", { name: `Water on ${dateKey}` }).querySelector("path"))
-      .toHaveAttribute("fill", HABIT_COLORS[0].value);
-    await act(async () => { fireEvent.click(screen.getByRole("button", { name: `Reflect on ${dateKey}` })); });
+    expect(
+      screen.getByRole("button", { name: `Water on ${dateKey}` }).querySelector("path"),
+    ).toHaveAttribute("fill", HABIT_COLORS[0].value);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: `Reflect on ${dateKey}` }));
+    });
     fireEvent.change(screen.getByLabelText("Note"), { target: { value: "A calm morning" } });
     fireEvent.click(screen.getByRole("button", { name: "Save entry" }));
     fireEvent.mouseEnter(screen.getByRole("button", { name: `Reflect on ${dateKey}` }));
@@ -290,7 +352,8 @@ describe("habit tracker", () => {
   test("wheel checkbox clicks and keyboard toggles request the table's checked and unchecked sounds", () => {
     const dateKey = localDateKey(new Date());
     useHabitStore.getState().replaceStateForTests({
-      habits: [{ id: "move", name: "Move", icon: null, logType: "checkbox", createdAt }], logs: {},
+      habits: [{ id: "move", name: "Move", icon: null, logType: "checkbox", createdAt }],
+      logs: {},
     });
     render(<App />);
     fireEvent.click(screen.getByRole("tab", { name: "habits" }));
@@ -311,7 +374,9 @@ describe("habit tracker", () => {
   });
 
   test("rejects tracking before the first Sunday of 2026 without removing existing logs", () => {
-    useHabitStore.getState().replaceStateForTests({ habits: [], logs: { "2026-01-01": { old: true } } });
+    useHabitStore
+      .getState()
+      .replaceStateForTests({ habits: [], logs: { "2026-01-01": { old: true } } });
     useHabitStore.getState().setLog("2026-01-03", "move", true);
     expect(useHabitStore.getState().logs["2026-01-03"]).toBeUndefined();
     useHabitStore.getState().setLog("2026-01-04", "move", true);
@@ -321,38 +386,69 @@ describe("habit tracker", () => {
 
   test("persists habit order without changing saved logs and ignores invalid moves", () => {
     const habits: Habit[] = ["Read", "Move", "Water"].map((name) => ({
-      id: name, name, icon: null, logType: "checkbox", createdAt,
+      id: name,
+      name,
+      icon: null,
+      logType: "checkbox",
+      createdAt,
     }));
     const logs = { "2026-01-04": { Read: true, Water: true } };
     useHabitStore.getState().replaceStateForTests({ habits, logs });
     useHabitStore.getState().reorderHabit("Read", "Water");
-    expect(useHabitStore.getState().habits.map((habit) => habit.name)).toEqual(["Move", "Water", "Read"]);
+    expect(useHabitStore.getState().habits.map((habit) => habit.name)).toEqual([
+      "Move",
+      "Water",
+      "Read",
+    ]);
     expect(useHabitStore.getState().logs).toEqual(logs);
-    expect(JSON.parse(localStorage.getItem("seiri.habits.v1")!).state.habits.map((habit: Habit) => habit.name))
-      .toEqual(["Move", "Water", "Read"]);
+    expect(
+      JSON.parse(localStorage.getItem("seiri.habits.v1")!).state.habits.map(
+        (habit: Habit) => habit.name,
+      ),
+    ).toEqual(["Move", "Water", "Read"]);
     useHabitStore.getState().reorderHabit("Read", "missing");
     useHabitStore.getState().reorderHabit("missing", "Read");
     useHabitStore.getState().reorderHabit("Read", "Read");
-    expect(useHabitStore.getState().habits.map((habit) => habit.name)).toEqual(["Move", "Water", "Read"]);
+    expect(useHabitStore.getState().habits.map((habit) => habit.name)).toEqual([
+      "Move",
+      "Water",
+      "Read",
+    ]);
   });
 
   test("enforces the 12-habit limit in both the UI and store and allows adding after deletion", () => {
     const habits: Habit[] = Array.from({ length: MAX_HABITS }, (_, index) => ({
-      id: `habit-${index}`, name: `Habit ${index}`, icon: null, logType: "checkbox", createdAt,
+      id: `habit-${index}`,
+      name: `Habit ${index}`,
+      icon: null,
+      logType: "checkbox",
+      createdAt,
     }));
     useHabitStore.getState().replaceStateForTests({ habits, logs: {} });
     render(<App />);
     fireEvent.click(screen.getByRole("tab", { name: "habits" }));
     expect(screen.getByRole("button", { name: "Add habit" })).toBeDisabled();
     let result: string | null = "";
-    act(() => { result = useHabitStore.getState().addHabit({ name: "Too many", icon: null, logType: "checkbox" }); });
+    act(() => {
+      result = useHabitStore
+        .getState()
+        .addHabit({ name: "Too many", icon: null, logType: "checkbox" });
+    });
     expect(result).toBeNull();
     expect(useHabitStore.getState().habits).toHaveLength(MAX_HABITS);
-    act(() => { useHabitStore.getState().deleteHabit(habits[0]!.id); });
+    act(() => {
+      useHabitStore.getState().deleteHabit(habits[0]!.id);
+    });
     expect(screen.getByRole("button", { name: "Add habit" })).toBeEnabled();
-    act(() => { result = useHabitStore.getState().addHabit({ name: "New", icon: null, logType: "checkbox", color: "teal" }); });
+    act(() => {
+      result = useHabitStore
+        .getState()
+        .addHabit({ name: "New", icon: null, logType: "checkbox", color: "teal" });
+    });
     expect(result).not.toBeNull();
     expect(useHabitStore.getState().habits).toHaveLength(MAX_HABITS);
-    expect(JSON.parse(localStorage.getItem("seiri.habits.v1")!).state.habits.at(-1).color).toBe("teal");
+    expect(JSON.parse(localStorage.getItem("seiri.habits.v1")!).state.habits.at(-1).color).toBe(
+      "teal",
+    );
   });
 });

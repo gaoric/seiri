@@ -1,11 +1,7 @@
 import { CalendarDays } from "lucide-react";
-import { DayPicker } from "react-day-picker";
 import { Button } from "@/shared/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/shared/ui/popover";
+import { CalendarPopoverContent } from "@/shared/ui/calendar";
+import { Popover, PopoverTrigger } from "@/shared/ui/popover";
 import {
   dateToKey,
   daysUntil,
@@ -49,17 +45,11 @@ export function DueDateEditor({ ownerId, value, onChange }: DueDateEditorProps) 
           "—"
         )}
       </PopoverTrigger>
-      <PopoverContent
-        className="calendar-popover"
+      <CalendarPopoverContent
         data-task-editor-for={ownerId}
+        selected={value ? keyToDate(value) : undefined}
+        onSelect={(date) => onChange(dateToKey(date))}
       >
-        <DayPicker
-          mode="single"
-          defaultMonth={value ? keyToDate(value) : undefined}
-          selected={value ? keyToDate(value) : undefined}
-          onSelect={(date) => date && onChange(dateToKey(date))}
-          showOutsideDays
-        />
         <div className="calendar-foot">
           <span className="calendar-note">
             <CalendarDays className="size-3.5" />
@@ -78,7 +68,7 @@ export function DueDateEditor({ ownerId, value, onChange }: DueDateEditorProps) 
             </Button>
           )}
         </div>
-      </PopoverContent>
+      </CalendarPopoverContent>
     </Popover>
   );
 }

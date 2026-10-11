@@ -1,10 +1,7 @@
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { cn } from "@/shared/ui/utils";
 
-export function TooltipProvider({
-  delay = 350,
-  ...props
-}: TooltipPrimitive.Provider.Props) {
+export function TooltipProvider({ delay = 350, ...props }: TooltipPrimitive.Provider.Props) {
   return <TooltipPrimitive.Provider delay={delay} {...props} />;
 }
 
@@ -17,10 +14,7 @@ export function TooltipTrigger(props: TooltipPrimitive.Trigger.Props) {
 }
 
 type TooltipContentProps = TooltipPrimitive.Popup.Props &
-  Pick<
-    TooltipPrimitive.Positioner.Props,
-    "align" | "alignOffset" | "side" | "sideOffset"
-  >;
+  Pick<TooltipPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset">;
 
 export function TooltipContent({
   className,

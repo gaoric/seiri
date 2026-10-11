@@ -25,15 +25,9 @@ const buttonVariants = cva(
   },
 );
 
-export type ButtonProps = ButtonPrimitive.Props &
-  VariantProps<typeof buttonVariants>;
+export type ButtonProps = ButtonPrimitive.Props & VariantProps<typeof buttonVariants>;
 
-export function Button({
-  className,
-  variant,
-  size,
-  ...props
-}: ButtonProps) {
+export function Button({ className, variant, size, ...props }: ButtonProps) {
   return (
     <ButtonPrimitive
       data-slot="button"

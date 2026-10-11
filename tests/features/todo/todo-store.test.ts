@@ -32,11 +32,7 @@ beforeEach(() => {
 describe("task store", () => {
   test("creates new tasks at the top of Active", () => {
     const addedId = useTaskStore.getState().addTask();
-    expect(useTaskStore.getState().activeOrder).toEqual([
-      addedId,
-      "active",
-      "other",
-    ]);
+    expect(useTaskStore.getState().activeOrder).toEqual([addedId, "active", "other"]);
   });
 
   test("discards only untitled active drafts", () => {
@@ -50,21 +46,14 @@ describe("task store", () => {
   test("moves done and killed tasks into archive", () => {
     useTaskStore.getState().updateTask("active", { status: "done" });
     expect(useTaskStore.getState().activeOrder).toEqual(["other"]);
-    expect(useTaskStore.getState().archiveOrder).toEqual([
-      "archived",
-      "active",
-    ]);
+    expect(useTaskStore.getState().archiveOrder).toEqual(["archived", "active"]);
   });
 
   test("restores archived tasks as not started", () => {
     useTaskStore.getState().restoreTask("archived");
     expect(useTaskStore.getState().tasks.archived.status).toBe("not-started");
     expect(useTaskStore.getState().archiveOrder).toEqual([]);
-    expect(useTaskStore.getState().activeOrder).toEqual([
-      "active",
-      "other",
-      "archived",
-    ]);
+    expect(useTaskStore.getState().activeOrder).toEqual(["active", "other", "archived"]);
   });
 
   test("refuses to permanently delete an active task", () => {
@@ -90,11 +79,7 @@ describe("task store", () => {
     useTaskStore.getState().sortTasks("active", "title", "desc");
     const addedId = useTaskStore.getState().addTask();
     useTaskStore.getState().restoreTaskOrder("active", ["active", "other"]);
-    expect(useTaskStore.getState().activeOrder).toEqual([
-      "active",
-      "other",
-      addedId,
-    ]);
+    expect(useTaskStore.getState().activeOrder).toEqual(["active", "other", addedId]);
   });
 
   test("keeps demo changes ephemeral and restores the real workspace", () => {

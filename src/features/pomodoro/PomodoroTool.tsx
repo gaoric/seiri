@@ -112,13 +112,14 @@ function loadPomodoroPreferences(): PomodoroPreferences {
 
     const timing = stored.settings;
     const shortcuts = stored.shortcuts;
-    const hasValidShortcuts = shortcuts && SHORTCUT_OPTIONS.every(
-      ({ action }) => isShortcut(shortcuts[action]),
-    ) && SHORTCUT_OPTIONS.every(({ action }, index) =>
-      SHORTCUT_OPTIONS.slice(index + 1).every(({ action: otherAction }) =>
-        !shortcutsMatch(shortcuts[action], shortcuts[otherAction]),
-      ),
-    );
+    const hasValidShortcuts =
+      shortcuts &&
+      SHORTCUT_OPTIONS.every(({ action }) => isShortcut(shortcuts[action])) &&
+      SHORTCUT_OPTIONS.every(({ action }, index) =>
+        SHORTCUT_OPTIONS.slice(index + 1).every(
+          ({ action: otherAction }) => !shortcutsMatch(shortcuts[action], shortcuts[otherAction]),
+        ),
+      );
 
     return {
       settings: {
@@ -126,9 +127,8 @@ function loadPomodoroPreferences(): PomodoroPreferences {
         shortBreakMinutes: savedNumber(timing?.shortBreakMinutes, 1, 30, 5),
         longBreakMinutes: savedNumber(timing?.longBreakMinutes, 1, 60, 15),
         rounds: savedNumber(timing?.rounds, 1, 8, 4),
-        autoStart: typeof timing?.autoStart === "boolean"
-          ? timing.autoStart
-          : defaults.settings.autoStart,
+        autoStart:
+          typeof timing?.autoStart === "boolean" ? timing.autoStart : defaults.settings.autoStart,
       },
       alarmSound: ALARM_OPTIONS.some(({ value }) => value === stored.alarmSound)
         ? stored.alarmSound!
@@ -145,19 +145,24 @@ function loadPomodoroPreferences(): PomodoroPreferences {
 }
 
 function savedNumber(value: unknown, min: number, max: number, fallback: number) {
-  return typeof value === "number" && Number.isInteger(value) &&
-    value >= min && value <= max ? value : fallback;
+  return typeof value === "number" && Number.isInteger(value) && value >= min && value <= max
+    ? value
+    : fallback;
 }
 
 function isShortcut(value: unknown): value is Shortcut {
   if (!value || typeof value !== "object") return false;
   const shortcut = value as Partial<Shortcut>;
-  return typeof shortcut.code === "string" && shortcut.code.length > 0 &&
-    typeof shortcut.keyLabel === "string" && shortcut.keyLabel.length > 0 &&
+  return (
+    typeof shortcut.code === "string" &&
+    shortcut.code.length > 0 &&
+    typeof shortcut.keyLabel === "string" &&
+    shortcut.keyLabel.length > 0 &&
     typeof shortcut.altKey === "boolean" &&
     typeof shortcut.ctrlKey === "boolean" &&
     typeof shortcut.metaKey === "boolean" &&
-    typeof shortcut.shiftKey === "boolean";
+    typeof shortcut.shiftKey === "boolean"
+  );
 }
 
 type PomodoroToolProps = {
@@ -179,8 +184,7 @@ export function PomodoroTool({
   const [alarmVolume, setAlarmVolume] = useState(savedPreferences.alarmVolume);
   const [timerColor, setTimerColor] = useState(savedPreferences.timerColor);
   const [shortcuts, setShortcuts] = useState(savedPreferences.shortcuts);
-  const [recordingShortcut, setRecordingShortcut] =
-    useState<ShortcutAction | null>(null);
+  const [recordingShortcut, setRecordingShortcut] = useState<ShortcutAction | null>(null);
 
   useEffect(() => {
     try {
@@ -198,26 +202,11 @@ export function PomodoroTool({
     soundEnabled,
     normalizeVolume: true,
   } as const;
-  const [playFlute, { stop: stopFlute }] = useSound(
-    fluteNotificationSound,
-    alarmPlaybackOptions,
-  );
-  const [playBirds, { stop: stopBirds }] = useSound(
-    forestBirdsSound,
-    alarmPlaybackOptions,
-  );
-  const [playBells, { stop: stopBells }] = useSound(
-    happyBellsSound,
-    alarmPlaybackOptions,
-  );
-  const [playMarimba, { stop: stopMarimba }] = useSound(
-    magicMarimbaSound,
-    alarmPlaybackOptions,
-  );
-  const [playDelayBell, { stop: stopDelayBell }] = useSound(
-    bellDelaySound,
-    alarmPlaybackOptions,
-  );
+  const [playFlute, { stop: stopFlute }] = useSound(fluteNotificationSound, alarmPlaybackOptions);
+  const [playBirds, { stop: stopBirds }] = useSound(forestBirdsSound, alarmPlaybackOptions);
+  const [playBells, { stop: stopBells }] = useSound(happyBellsSound, alarmPlaybackOptions);
+  const [playMarimba, { stop: stopMarimba }] = useSound(magicMarimbaSound, alarmPlaybackOptions);
+  const [playDelayBell, { stop: stopDelayBell }] = useSound(bellDelaySound, alarmPlaybackOptions);
   const stopAlarms = useCallback(() => {
     stopFlute();
     stopBells();
@@ -234,29 +223,14 @@ export function PomodoroTool({
       if (sound === "marimba") playMarimba();
       if (sound === "delay-bell") playDelayBell();
     },
-    [
-      alarmSound,
-      playBells,
-      playBirds,
-      playDelayBell,
-      playFlute,
-      playMarimba,
-      stopAlarms,
-    ],
+    [alarmSound, playBells, playBirds, playDelayBell, playFlute, playMarimba, stopAlarms],
   );
   const sessions = useMemo(
     () => createPomodoroSessions(settings),
-    [
-      settings.focusMinutes,
-      settings.longBreakMinutes,
-      settings.rounds,
-      settings.shortBreakMinutes,
-    ],
+    [settings.focusMinutes, settings.longBreakMinutes, settings.rounds, settings.shortBreakMinutes],
   );
   const [sessionIndex, setSessionIndex] = useState(0);
-  const [secondsLeft, setSecondsLeft] = useState(
-    savedPreferences.settings.focusMinutes * 60,
-  );
+  const [secondsLeft, setSecondsLeft] = useState(savedPreferences.settings.focusMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [hasStartedSession, setHasStartedSession] = useState(false);
   const endAt = useRef(0);
@@ -268,10 +242,7 @@ export function PomodoroTool({
     if (!isRunning) return;
 
     const update = () => {
-      const remaining = Math.max(
-        0,
-        Math.ceil((endAt.current - Date.now()) / 1000),
-      );
+      const remaining = Math.max(0, Math.ceil((endAt.current - Date.now()) / 1000));
 
       if (remaining > 0) {
         setSecondsLeft(remaining);
@@ -282,9 +253,7 @@ export function PomodoroTool({
       setSessionIndex((currentIndex) => {
         const nextIndex = nextSessionIndex(currentIndex, sessions.length);
         const nextDuration = sessions[nextIndex].durationSeconds;
-        endAt.current = settings.autoStart
-          ? Date.now() + nextDuration * 1000
-          : 0;
+        endAt.current = settings.autoStart ? Date.now() + nextDuration * 1000 : 0;
         setSecondsLeft(nextDuration);
         setHasStartedSession(settings.autoStart);
         setIsRunning(settings.autoStart);
@@ -299,9 +268,7 @@ export function PomodoroTool({
 
   function toggleTimer() {
     if (isRunning) {
-      setSecondsLeft(
-        Math.max(0, Math.ceil((endAt.current - Date.now()) / 1000)),
-      );
+      setSecondsLeft(Math.max(0, Math.ceil((endAt.current - Date.now()) / 1000)));
       setIsRunning(false);
       return;
     }
@@ -318,9 +285,7 @@ export function PomodoroTool({
     setSecondsLeft(nextDuration);
     setHasStartedSession(settings.autoStart);
     setIsRunning(settings.autoStart);
-    endAt.current = settings.autoStart
-      ? Date.now() + nextDuration * 1000
-      : 0;
+    endAt.current = settings.autoStart ? Date.now() + nextDuration * 1000 : 0;
   }
 
   function resetSession() {
@@ -375,10 +340,7 @@ export function PomodoroTool({
     }));
   }
 
-  function captureShortcut(
-    action: ShortcutAction,
-    event: ReactKeyboardEvent<HTMLButtonElement>,
-  ) {
+  function captureShortcut(action: ShortcutAction, event: ReactKeyboardEvent<HTMLButtonElement>) {
     event.preventDefault();
     event.stopPropagation();
 
@@ -389,17 +351,12 @@ export function PomodoroTool({
 
     if (["Alt", "Control", "Meta", "Shift"].includes(event.key)) return;
 
-    const nextShortcut = createShortcut(
-      event.code,
-      shortcutKeyLabel(event.key),
-      event,
-    );
+    const nextShortcut = createShortcut(event.code, shortcutKeyLabel(event.key), event);
 
     setShortcuts((current) => {
       const duplicate = SHORTCUT_OPTIONS.find(
         ({ action: otherAction }) =>
-          otherAction !== action &&
-          shortcutsMatch(current[otherAction], nextShortcut),
+          otherAction !== action && shortcutsMatch(current[otherAction], nextShortcut),
       );
       if (!duplicate) return { ...current, [action]: nextShortcut };
 
@@ -418,21 +375,14 @@ export function PomodoroTool({
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (
-        !isActive ||
-        settingsOpen ||
-        event.defaultPrevented ||
-        event.repeat
-      ) {
+      if (!isActive || settingsOpen || event.defaultPrevented || event.repeat) {
         return;
       }
 
       const target = event.target;
       if (
         target instanceof HTMLElement &&
-        target.closest(
-          'input, select, textarea, [contenteditable="true"]',
-        )
+        target.closest('input, select, textarea, [contenteditable="true"]')
       ) {
         return;
       }
@@ -475,9 +425,7 @@ export function PomodoroTool({
     shortcuts,
   ]);
 
-  const completedFocusSessions = session.kind === "focus"
-    ? session.cycle - 1
-    : session.cycle;
+  const completedFocusSessions = session.kind === "focus" ? session.cycle - 1 : session.cycle;
 
   const dialStyle = {
     "--pomodoro-progress": `${progress * 360}deg`,
@@ -485,15 +433,8 @@ export function PomodoroTool({
   } as CSSProperties;
 
   return (
-    <section
-      className="pomodoro-tool"
-      aria-label="Pomodoro timer"
-      style={dialStyle}
-    >
-      <DialogPrimitive.Root
-        open={settingsOpen}
-        onOpenChange={onSettingsOpenChange}
-      >
+    <section className="pomodoro-tool" aria-label="Pomodoro timer" style={dialStyle}>
+      <DialogPrimitive.Root open={settingsOpen} onOpenChange={onSettingsOpenChange}>
         <DialogPrimitive.Portal>
           <DialogPrimitive.Backdrop className="pomodoro-settings-overlay" />
           <DialogPrimitive.Popup className="pomodoro-settings-panel">
@@ -529,9 +470,7 @@ export function PomodoroTool({
                 value={settings.shortBreakMinutes}
                 min={1}
                 max={30}
-                onChange={(value) =>
-                  updateTimingSetting("shortBreakMinutes", value)
-                }
+                onChange={(value) => updateTimingSetting("shortBreakMinutes", value)}
               />
               <SettingSlider
                 label="Long break"
@@ -539,9 +478,7 @@ export function PomodoroTool({
                 value={settings.longBreakMinutes}
                 min={1}
                 max={60}
-                onChange={(value) =>
-                  updateTimingSetting("longBreakMinutes", value)
-                }
+                onChange={(value) => updateTimingSetting("longBreakMinutes", value)}
               />
               <SettingSlider
                 label="Rounds"
@@ -549,9 +486,7 @@ export function PomodoroTool({
                 value={settings.rounds}
                 min={1}
                 max={8}
-                formatValue={(value) =>
-                  `${value} ${value === 1 ? "round" : "rounds"}`
-                }
+                formatValue={(value) => `${value} ${value === 1 ? "round" : "rounds"}`}
                 onChange={(value) => updateTimingSetting("rounds", value)}
               />
               <div className="pomodoro-setting-row">
@@ -579,11 +514,7 @@ export function PomodoroTool({
               </h3>
               <div className="pomodoro-alarm-setting">
                 <span>Sound</span>
-                <div
-                  className="pomodoro-alarm-options"
-                  role="radiogroup"
-                  aria-label="Alarm sound"
-                >
+                <div className="pomodoro-alarm-options" role="radiogroup" aria-label="Alarm sound">
                   {ALARM_OPTIONS.map((option) => (
                     <button
                       key={option.value}
@@ -619,11 +550,7 @@ export function PomodoroTool({
                 <Palette aria-hidden="true" />
                 Themes
               </h3>
-              <div
-                className="pomodoro-theme-options"
-                role="radiogroup"
-                aria-label="Timer color"
-              >
+              <div className="pomodoro-theme-options" role="radiogroup" aria-label="Timer color">
                 {TIMER_THEMES.map((theme) => (
                   <button
                     key={theme.value}
@@ -650,9 +577,7 @@ export function PomodoroTool({
                 <Keyboard aria-hidden="true" />
                 Shortcuts
               </h3>
-              <p className="pomodoro-shortcut-help">
-                Select a shortcut, then press a key.
-              </p>
+              <p className="pomodoro-shortcut-help">Select a shortcut, then press a key.</p>
               <div className="pomodoro-shortcut-options">
                 {SHORTCUT_OPTIONS.map(({ action, label }) => (
                   <div className="pomodoro-shortcut-setting" key={action}>
@@ -663,9 +588,7 @@ export function PomodoroTool({
                       aria-pressed={recordingShortcut === action}
                       onClick={() => setRecordingShortcut(action)}
                       onBlur={() =>
-                        setRecordingShortcut((current) =>
-                          current === action ? null : current,
-                        )
+                        setRecordingShortcut((current) => (current === action ? null : current))
                       }
                       onKeyDown={(event) => {
                         if (recordingShortcut === action) {
@@ -698,27 +621,24 @@ export function PomodoroTool({
         >
           <div className="pomodoro-dial-face">
             <span className="pomodoro-session">{session.label}</span>
-            <time dateTime={`PT${secondsLeft}S`}>
-              {formatPomodoroTime(secondsLeft)}
-            </time>
+            <time dateTime={`PT${secondsLeft}S`}>{formatPomodoroTime(secondsLeft)}</time>
             <span className="pomodoro-focus-dots" aria-label="Focus sessions">
-              {Array.from(
-                { length: settings.rounds },
-                (_, index) => index + 1,
-              ).map((focusSession) => {
-                const active =
-                  focusSession <= completedFocusSessions ||
-                  (session.kind === "focus" &&
-                    session.cycle === focusSession &&
-                    hasStartedSession);
-                return (
-                  <span
-                    key={focusSession}
-                    className={active ? "is-active" : undefined}
-                    aria-hidden="true"
-                  />
-                );
-              })}
+              {Array.from({ length: settings.rounds }, (_, index) => index + 1).map(
+                (focusSession) => {
+                  const active =
+                    focusSession <= completedFocusSessions ||
+                    (session.kind === "focus" &&
+                      session.cycle === focusSession &&
+                      hasStartedSession);
+                  return (
+                    <span
+                      key={focusSession}
+                      className={active ? "is-active" : undefined}
+                      aria-hidden="true"
+                    />
+                  );
+                },
+              )}
             </span>
           </div>
         </div>
@@ -784,10 +704,7 @@ export function PomodoroTool({
   );
 }
 
-type ShortcutModifiers = Pick<
-  Shortcut,
-  "altKey" | "ctrlKey" | "metaKey" | "shiftKey"
->;
+type ShortcutModifiers = Pick<Shortcut, "altKey" | "ctrlKey" | "metaKey" | "shiftKey">;
 
 function createShortcut(
   code: string,

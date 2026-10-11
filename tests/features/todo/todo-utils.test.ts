@@ -91,30 +91,10 @@ describe("task utilities", () => {
 
   test("sorts every displayed property and leaves blanks last", () => {
     const ids = ["a", "b", "c"];
-    expect(sortTaskIds(ids, sortableTasks, "priority", "asc")).toEqual([
-      "b",
-      "c",
-      "a",
-    ]);
-    expect(sortTaskIds(ids, sortableTasks, "title", "asc")).toEqual([
-      "b",
-      "a",
-      "c",
-    ]);
-    expect(sortTaskIds(ids, sortableTasks, "status", "asc")).toEqual([
-      "b",
-      "c",
-      "a",
-    ]);
-    expect(sortTaskIds(ids, sortableTasks, "estimate", "asc")).toEqual([
-      "a",
-      "b",
-      "c",
-    ]);
-    expect(sortTaskIds(ids, sortableTasks, "due", "desc")).toEqual([
-      "a",
-      "b",
-      "c",
-    ]);
+    expect(sortTaskIds(ids, sortableTasks, "priority", "asc")).toEqual(["b", "c", "a"]);
+    expect(sortTaskIds(ids, sortableTasks, "title", "asc")).toEqual(["b", "a", "c"]);
+    expect(sortTaskIds(ids, sortableTasks, "status", "asc")).toEqual(["b", "c", "a"]);
+    expect(sortTaskIds(ids, sortableTasks, "estimate", "asc")).toEqual(["a", "b", "c"]);
+    expect(sortTaskIds(ids, sortableTasks, "due", "desc")).toEqual(["a", "b", "c"]);
   });
 });

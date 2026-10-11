@@ -1,18 +1,8 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/shared/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/shared/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { requestUiSound } from "@/shared/sound/use-ui-sounds";
 import {
   ESTIMATE_BOUNDS,
@@ -28,11 +18,7 @@ type EstimateEditorProps = {
   onChange: (value: Estimate | null) => void;
 };
 
-export function EstimateEditor({
-  ownerId,
-  value,
-  onChange,
-}: EstimateEditorProps) {
+export function EstimateEditor({ ownerId, value, onChange }: EstimateEditorProps) {
   const [open, setOpen] = useState(false);
   const [unit, setUnit] = useState<EstimateUnit>(value?.unit ?? "days");
   const [amount, setAmount] = useState(`${value?.amount ?? 1}`);
@@ -89,19 +75,11 @@ export function EstimateEditor({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
-        render={
-          <button
-            className="property-trigger estimate-trigger"
-            type="button"
-          />
-        }
+        render={<button className="property-trigger estimate-trigger" type="button" />}
       >
         {value ? formatEstimate(value) : "—"}
       </PopoverTrigger>
-      <PopoverContent
-        className="estimate-popover"
-        data-task-editor-for={ownerId}
-      >
+      <PopoverContent className="estimate-popover" data-task-editor-for={ownerId}>
         <div className="estimate-controls">
           <div className="stepper-buttons">
             <button
@@ -171,7 +149,7 @@ export function EstimateEditor({
         </div>
         <div className="property-popover-foot">
           <p className="estimate-range">
-          Range {ESTIMATE_BOUNDS[unit][0]}–{ESTIMATE_BOUNDS[unit][1]}
+            Range {ESTIMATE_BOUNDS[unit][0]}–{ESTIMATE_BOUNDS[unit][1]}
           </p>
           {value && (
             <Button

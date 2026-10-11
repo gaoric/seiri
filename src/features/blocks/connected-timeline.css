@@ -1,0 +1,272 @@
+.blocks-connected-scroll {
+  height: 660px;
+  overflow-y: auto;
+  padding: 20px 16px 32px;
+}
+.blocks-connected {
+  --rail-x: 80px;
+  position: relative;
+}
+.blocks-connected-block,
+.blocks-connected-gap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: 100%;
+}
+.blocks-connected-block {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr) 52px;
+  column-gap: 14px;
+  align-items: start;
+  cursor: grab;
+  touch-action: none;
+}
+.blocks-connected-block.is-dragging {
+  opacity: 0.3;
+}
+.blocks-connected-block.is-boundary {
+  cursor: pointer;
+}
+.blocks-connected-line {
+  position: absolute;
+  left: var(--rail-x);
+  width: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--line-from) 25%, transparent),
+    color-mix(in srgb, var(--line-to) 25%, transparent)
+  );
+  pointer-events: none;
+}
+.blocks-connected-line > i {
+  display: block;
+  width: 100%;
+  height: var(--line-elapsed);
+  background: linear-gradient(to bottom, var(--line-from), var(--line-to));
+  background-size: 100% var(--line-height);
+}
+.blocks-connected-line.is-dotted {
+  mask-image: repeating-linear-gradient(to bottom, #000 0 4px, transparent 4px 10px);
+}
+.blocks-connected.is-live .blocks-connected-line > i {
+  mask-image: linear-gradient(to bottom, #000 var(--fade-start), transparent var(--line-elapsed));
+}
+.blocks-connected.is-live .blocks-connected-icon > i {
+  mask-image: linear-gradient(
+    to bottom,
+    #000 var(--icon-fade-start),
+    transparent var(--icon-fade-end)
+  );
+}
+.blocks-connected-content {
+  position: relative;
+  grid-column: 1 / 3;
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  column-gap: 14px;
+  width: 100%;
+  height: calc(100% - 16px);
+  margin: 8px 0;
+  padding: 0;
+  text-align: left;
+  cursor: inherit;
+}
+.blocks-connected-details {
+  padding: 8px 0;
+  min-width: 0;
+}
+.blocks-connected-times {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.blocks-connected-times > time {
+  position: absolute;
+  right: calc(100% - var(--rail-x) + 34px);
+  transform: translateY(-50%);
+  color: #939eaf;
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.blocks-connected-timing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 7px;
+  color: #a5aebb;
+  font-size: 12px;
+  line-height: 17px;
+}
+.blocks-connected-timing > span {
+  color: #7f8999;
+}
+.blocks-connected-timing > svg {
+  width: 12px;
+  height: 12px;
+  color: var(--block-color);
+}
+.blocks-connected-details > strong {
+  display: block;
+  margin: 0 0 3px;
+  font-size: 16px;
+  font-weight: 550;
+  line-height: 21px;
+  color: #e9ecf1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.blocks-connected-details > .blocks-todo-details {
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 6px;
+}
+.blocks-connected-icon {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  justify-self: end;
+  width: 48px;
+  height: var(--icon-height);
+  border: 1px solid color-mix(in srgb, var(--block-color) 30%, transparent);
+  border-radius: 28px;
+  overflow: hidden;
+  background: #23272f;
+  color: var(--block-color);
+}
+.blocks-connected-icon > i {
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--elapsed);
+  background: color-mix(in srgb, var(--block-color) 55%, #23272f);
+}
+.blocks-connected-icon > svg {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  color: #e9ecf1;
+}
+.blocks-connected-controls {
+  grid-column: 3;
+  margin-top: 26px;
+  display: flex;
+  justify-content: flex-end;
+}
+.blocks-category-habit .blocks-connected-controls {
+  height: var(--icon-height);
+  margin-top: 8px;
+  align-items: center;
+}
+.blocks-connected-habit-log {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+}
+.blocks-connected-details > strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.blocks-connected-habit-log .habit-check {
+  border: 1px solid #ffffff1f;
+  color: var(--habit-color);
+  background: #ffffff06;
+}
+.blocks-connected-habit-log .habit-check.is-complete {
+  border-color: var(--habit-color);
+  background: var(--habit-color);
+  color: white;
+}
+.blocks-connected-controls .blocks-task-completion button {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #ffffff22;
+  border-radius: 7px;
+}
+.blocks-connected-block.is-done strong {
+  text-decoration: line-through;
+  opacity: 0.65;
+}
+.blocks-connected-gap {
+  padding: 0;
+  text-align: left;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.blocks-connected-gap:hover,
+.blocks-connected-gap.is-over {
+  background: #8bbcff0a !important;
+}
+.blocks-connected-gap > span:not(.blocks-connected-line) {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: calc(100% - 182px);
+  margin-left: 118px;
+  color: #939eaf;
+  font-size: 12px;
+  padding: 12px 0;
+}
+.blocks-connected-gap > span > svg {
+  width: 13px;
+  height: 13px;
+}
+.blocks-connected-gap > span > span {
+  display: block;
+  flex-basis: 100%;
+  color: #6e7b8d;
+  font-size: 11px;
+  margin-left: 19px;
+}
+.blocks-connected-now {
+  position: absolute;
+  left: var(--rail-x);
+  width: 10px;
+  height: 10px;
+  z-index: 2;
+  pointer-events: none;
+}
+.blocks-connected-now > i {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #1b2028;
+  border-radius: 50%;
+  background: #b5d4ff;
+  box-shadow: 0 0 0 2px #8bbcff70;
+  transform: translate(-50%, -50%);
+}
+.blocks-connected-now > time {
+  position: absolute;
+  top: 0;
+  right: calc(100% + 34px);
+  transform: translateY(-50%);
+  padding: 2px 3px;
+  border-radius: 4px;
+  color: #b5d4ff;
+  background: #1b2028;
+  font-size: 11px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 680px) {
+  .blocks-connected-scroll {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .blocks-connected-details > strong {
+    font-size: 15px;
+  }
+  .blocks-connected-timing {
+    font-size: 11px;
+    gap: 2px 6px;
+  }
+}
